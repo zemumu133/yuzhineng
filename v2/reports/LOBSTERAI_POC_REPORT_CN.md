@@ -252,3 +252,139 @@ LobsterAI 可以作为 v2 桌面客户端壳继续验证，但进入深度集成
 3. 验证 Cowork / OpenClaw gateway 是否能启动。
 4. 再验证 domestic_signal_growth 通过 MCP/Skill 接入。
 
+## Phase 1A-RepairRuntime：OpenClaw runtime 构建修复
+
+### 1. 测试日期
+
+2026-06-30
+
+### 2. 是否找到 bash.exe
+
+修复前未在以下位置找到 bash.exe：
+
+- `D:\DevTools\Git\bin\bash.exe`
+- `D:\DevTools\Git\usr\bin\bash.exe`
+- `D:\DevTools\Git\mingw64\bin\bash.exe`
+- `C:\Program Files\Git\bin\bash.exe`
+- `C:\Program Files\Git\usr\bin\bash.exe`
+
+修复后已找到：
+
+- `D:\DevTools\PortableGit\bin\bash.exe`
+- `D:\DevTools\PortableGit\usr\bin\bash.exe`
+
+### 3. 是否使用 PortableGit
+
+是。
+
+- 来源：Git for Windows 官方 GitHub release
+- 文件：`PortableGit-2.54.0-64-bit.7z.exe`
+- 下载路径：`D:\DevTools\downloads\PortableGit-2.54.0-64-bit.7z.exe`
+- 解压路径：`D:\DevTools\PortableGit`
+- SHA256：`BEA006A6CC69673F27B1647E84AB3A68E912FBC175AB6320C5987E012897F311`
+
+### 4. 是否修改系统 PATH
+
+否。
+
+本阶段只在当前 PowerShell 命令中临时加入：
+
+- `D:\DevTools\PortableGit\cmd`
+- `D:\DevTools\PortableGit\bin`
+- `D:\DevTools\PortableGit\usr\bin`
+- `D:\OpenClaw\v2\runtimes\shims`
+
+### 5. 运行命令
+
+在 `D:\OpenClaw\v2\client-shell\lobsterai\src` 下运行：
+
+```powershell
+npm run electron:dev:openclaw
+```
+
+运行前设置了临时环境变量：
+
+```powershell
+OPENCLAW_SRC=D:\OpenClaw\v2\runtimes\lobsterai-openclaw-src
+npm_config_registry=https://registry.npmmirror.com
+ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/
+ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/
+```
+
+### 6. OpenClaw runtime 是否构建成功
+
+成功。
+
+关键证据：
+
+- OpenClaw source 已定位到 `D:\OpenClaw\v2\runtimes\lobsterai-openclaw-src`
+- 已应用 LobsterAI 对 OpenClaw 的 15 个 patch
+- `pnpm install --frozen-lockfile` 完成
+- `build-all` 完成
+- `ui:build` 完成
+- OpenClaw tarball 打包完成
+- 后续重试时输出 `Already built for v2026.6.1 (target=win-x64...)`
+
+说明：第一次完整构建约 21 分 53 秒，其中一段时间耗在 GitHub 下载 `@matrix-org/matrix-sdk-crypto-nodejs` 的 Windows 原生包。
+
+### 7. Electron 是否启动成功
+
+成功。
+
+关键证据：
+
+- `VITE v5.4.21 ready`
+- Electron 主窗口标题：`LobsterAI`
+- OpenClaw token proxy 启动
+- CoworkProxy 启动
+- SkillServices Web Search Bridge Server 启动
+- 截图：`D:\OpenClaw\v2\reports\assets\lobsterai\repair-runtime-lobsterai-window.png`
+
+### 8. Cowork mode 是否可用
+
+可用到启动层验证。
+
+关键证据：
+
+- `CoworkProxy` 已启动，端口 `50131`
+- `IMGatewayManager` 已创建 Cowork handler
+- 嵌入式 OpenClaw gateway 监听端口 `18790`
+- gateway 输出 `ready`
+
+本阶段未连接真实社媒账号，未执行真实外部动作。
+
+### 9. 失败原因和修复记录
+
+已修复：
+
+1. `bash.exe` 缺失：通过官方 PortableGit 修复。
+2. Git Bash 中找不到 `pnpm`：在被 Git 忽略的 `D:\OpenClaw\v2\runtimes\shims\pnpm` 创建当前机器专用 shim。
+3. `better-sqlite3.node` 被占用：停止上一轮残留的 LobsterAI Electron / Vite / Web Search 进程后重试成功。
+
+仍需记录的非阻塞问题：
+
+1. 可选插件 `moltbot-popo` 因 `https://npm.nie.netease.com` 网络 `ECONNRESET` 被跳过，但官方脚本继续并提示插件整体处理成功。
+2. 开发模式提示 bundled Python runtime 不存在，后续打包阶段需要准备 Windows Python runtime。
+3. gateway 输出安全警告：`browser.ssrfPolicy.dangerouslyAllowPrivateNetwork=true`，后续商业化阶段必须进入安全审计和默认关闭策略。
+4. 当前默认模型显示为 `deepseek/deepseek-v4-flash`，Phase 1A-DeepSeekSkill 需要明确验证 V4 Pro 的任务绑定策略。
+
+### 10. 是否建议继续 LobsterAI
+
+建议继续。
+
+理由：
+
+- Electron UI 已能启动。
+- OpenClaw runtime 已构建成功。
+- 嵌入式 gateway 已启动并 ready。
+- Cowork 相关 proxy / handler 已启动。
+- DeepSeek provider 已存在，后续可以进入 DeepSeek + Skill 接入验证。
+
+### 11. 下一步建议
+
+进入 Phase 1A-DeepSeekSkill：
+
+1. 不写真实 key 到仓库。
+2. 验证 DeepSeek V4 Pro 是否能作为高价值任务模型。
+3. 验证 domestic_signal_growth Skill 通过 Skill / MCP / 本地命令接入 LobsterAI。
+4. 明确默认不自动外发、不接真实社媒账号、不绕过平台限制。
