@@ -55,3 +55,18 @@ coverage/
 /docs/
 /gateway/
 /scripts/
+
+# Phase 1A external PoC sources and generated outputs
+/v2/client-shell/lobsterai/src/
+/v2/client-shell/lobsterai/openclaw/
+/v2/client-shell/lobsterai/runtime/
+/v2/client-shell/lobsterai/openclaw-runtime/
+/v2/client-shell/lobsterai/**/node_modules/
+/v2/client-shell/lobsterai/**/dist/
+/v2/client-shell/lobsterai/**/build/
+/v2/client-shell/lobsterai/**/out/
+/v2/client-shell/lobsterai/**/release/
+/v2/client-shell/lobsterai/**/.turbo/
+/v2/client-shell/lobsterai/**/.parcel-cache/
+/v2/client-shell/lobsterai/**/.electron/
+/v2/runtimes/
