@@ -1,0 +1,57 @@
+# Secrets and credentials
+secrets/
+*.env
+*.key
+*.token
+*.pem
+*.p12
+*.pfx
+
+# Runtime data
+logs/
+backups/
+data/
+exports/
+database/
+approval_queue/
+browser_profiles/
+workspaces/
+generated_media/
+restore/
+
+# Browser profile sensitive files
+**/Default/Cookies
+**/Default/Network/
+**/Default/Local Storage/
+**/Default/Session Storage/
+
+# Databases
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+
+# Dependencies and build output
+node_modules/
+dist/
+build/
+.cache/
+.vite/
+.next/
+coverage/
+
+# Archives and temporary files
+*.log
+*.zip
+*.7z
+*.rar
+*.tmp
+
+# Legacy Phase 1.x implementation is kept as local reference/debug state.
+# Do not include it in the v2 baseline unless a later phase explicitly audits it.
+/agent-cards/
+/agents/
+/config/
+/console/
+/docs/
+/gateway/
+/scripts/
