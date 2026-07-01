@@ -1,0 +1,54 @@
+{
+  "enabled": false,
+  "description": "Local-only Dev Auto-Run gate for YuZhiNeng testing. Copy to dev-auto-run.json and set enabled=true only on a local development machine.",
+  "required_environment": {
+    "YUZHINENG_DEV_AUTO_RUN": "1"
+  },
+  "model": "deepseek/deepseek-v4-pro",
+  "allowed_scopes": [
+    "cowork.session.create",
+    "cowork.session.send",
+    "agent.test.create",
+    "agent.test.update",
+    "agent.test.delete",
+    "task.test.create",
+    "task.test.update",
+    "skill.domestic_signal_growth.call",
+    "tool.web_search.public",
+    "tool.document.local",
+    "write.v2.reports",
+    "write.v2.data.test_runs",
+    "read.v2.docs",
+    "read.v2.skills"
+  ],
+  "denied_scopes": [
+    "read.secrets",
+    "read.api_keys",
+    "read.tokens",
+    "read.cookies",
+    "read.browser_profiles",
+    "social.login",
+    "email.send",
+    "dm.send",
+    "comment.post",
+    "post.publish",
+    "official.bundle.install",
+    "official.update.download",
+    "payment.call",
+    "ads.call",
+    "customer_data.bulk_export",
+    "system.path.modify",
+    "system.install.large",
+    "legacy_console.modify",
+    "operator.admin.global_allow"
+  ],
+  "allowed_paths": [
+    "D:\\OpenClaw\\v2\\reports",
+    "D:\\OpenClaw\\v2\\data\\test-runs",
+    "D:\\OpenClaw\\v2\\skills\\domestic_signal_growth"
+  ],
+  "openclaw_cli": "D:\\DevTools\\node\\npm-global\\openclaw.cmd",
+  "lobsterai_sqlite": "%APPDATA%\\LobsterAI\\lobsterai.sqlite",
+  "mirror_agents_to_lobsterai_ui": true,
+  "external_action_mode": "draft_only"
+}
