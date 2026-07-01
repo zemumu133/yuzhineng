@@ -8,6 +8,16 @@
 
 决策：Phase 1A 做 PoC 后决定采用、参考或放弃。
 
+## Phase 1A-CommercialSurfaceAudit 决策
+
+状态：已完成，归档备用。
+
+结论：
+LobsterAI 可以继续作为“宇智能”的桌面底座做 PoC，但当前不进入 WhiteLabelMVP。白标化会影响登录、Portal、Skill/Kit 商店、官方模型服务、更新、遥测等能力路径。当前阶段优先验证业务能力。
+
+下一步：
+进入 Phase 1A-CapabilityFirst。
+
 ## Sim.ai
 
 状态：待验证
@@ -47,4 +57,3 @@
 用途：本地索引、去重、来源检索和报告引用候选。
 
 决策：Phase 3 验证数据量、查询体验和维护成本后决定。
-
