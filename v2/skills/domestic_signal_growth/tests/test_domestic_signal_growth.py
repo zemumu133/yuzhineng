@@ -199,6 +199,42 @@ class DomesticSignalGrowthTests(unittest.TestCase):
         self.assertNotIn("健身房", packaging_text)
         self.assertNotIn("纸箱", electronics_text)
 
+    def test_product_profile_from_product_intelligence_is_used_first(self):
+        from domestic_signal_growth import generate_signal_report
+
+        output = generate_signal_report(
+            {
+                "company_location": "东莞",
+                "factory_type": "包装厂",
+                "product_name": "旧产品名不应优先",
+                "target_customer_hint": ["电商仓储"],
+                "platforms": ["小红书", "抖音", "公众号"],
+                "mode": "draft_only",
+                "search_required": True,
+                "product_profile": {
+                    "product_name": "高强防潮出口纸箱",
+                    "factory_type": "包装厂",
+                    "location": "东莞",
+                    "category": "重型包装与物流包装",
+                    "summary": "适合重货出口和潮湿运输环境的高强包装。",
+                    "main_specs": ["五层瓦楞", "可定制尺寸"],
+                    "materials": ["高强瓦楞纸", "防潮涂层"],
+                    "certifications": ["待人工确认"],
+                    "delivery_notes": "打样后确认交期",
+                },
+            },
+            searcher=FakeSearcher(),
+        )
+
+        understanding = output["product_understanding"]
+        self.assertEqual(output["product"], "高强防潮出口纸箱")
+        self.assertEqual(understanding["product_name"], "高强防潮出口纸箱")
+        self.assertEqual(understanding["product_profile_source"], "product_intelligence")
+        self.assertEqual(understanding["category"], "重型包装与物流包装")
+        self.assertIn("防潮涂层", understanding["materials"])
+        self.assertIn("五层瓦楞", understanding["main_specs"])
+        self.assertIn("防潮", jsonish(output["content_materials"]))
+
 
 def jsonish(value):
     import json

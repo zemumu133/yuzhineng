@@ -43,7 +43,13 @@ class ArchiveManufacturingGrowthResultTests(unittest.TestCase):
                 "location": "东莞",
                 "factory_type": "电子配件厂",
                 "product_name": "电子连接件、线束、充电配件",
+                "product_profile_source": "product_intelligence",
+                "category": "电子配件与连接组件",
                 "product_description": "面向电子厂和品牌商的电子配件。",
+                "main_specs": ["定制线束", "小批量打样"],
+                "materials": ["铜件", "塑胶外壳", "线材"],
+                "certifications": ["待人工确认"],
+                "delivery_notes": "打样后确认交期",
                 "factory_capabilities": ["线束打样", "连接件加工"],
                 "selling_points": ["规格匹配", "打样速度"],
                 "suitable_customer_types": ["电子厂和组装厂", "品牌商"],
@@ -123,6 +129,9 @@ class ArchiveManufacturingGrowthResultTests(unittest.TestCase):
         self.assertTrue((project_dir / "todos.json").exists())
         self.assertTrue((project_dir / "safety_check.json").exists())
         self.assertTrue((project_dir / "README_CN.md").exists())
+        self.assertTrue((project_dir / "product_profile.json").exists())
+        self.assertTrue((project_dir / "product_card.md").exists())
+        self.assertTrue((project_dir / "growth_input.json").exists())
 
         manifest = json.loads((project_dir / "project_manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["mode"], "draft_only")
@@ -130,11 +139,26 @@ class ArchiveManufacturingGrowthResultTests(unittest.TestCase):
         self.assertEqual(manifest["safety_status"]["real_external_send"], False)
         self.assertTrue(Path(manifest["generated_files"]["report_md"]).exists())
         self.assertTrue(Path(manifest["generated_files"]["handoff_docx"]).exists())
+        self.assertTrue(Path(manifest["generated_files"]["product_card"]).exists())
+        self.assertTrue(Path(manifest["generated_files"]["product_profile"]).exists())
+
+        product_profile = json.loads((project_dir / "product_profile.json").read_text(encoding="utf-8"))
+        self.assertEqual(product_profile["product_name"], "电子连接件、线束、充电配件")
+        self.assertEqual(product_profile["category"], "电子配件与连接组件")
+
+        growth_input = json.loads((project_dir / "growth_input.json").read_text(encoding="utf-8"))
+        self.assertIn("product_profile", growth_input)
+        self.assertEqual(growth_input["mode"], "draft_only")
 
         report_text = (project_dir / "report.md").read_text(encoding="utf-8")
         self.assertIn("draft_only", report_text)
+        self.assertIn("产品资料理解", report_text)
         self.assertIn("小红书内容建议", report_text)
         self.assertIn("工厂销售交接建议", report_text)
+
+        card_text = (project_dir / "product_card.md").read_text(encoding="utf-8")
+        self.assertIn("产品资料卡", card_text)
+        self.assertIn("铜件", card_text)
 
         self.assertTrue(zipfile.is_zipfile(project_dir / "handoff.docx"))
         self.assertGreater((project_dir / "handoff.docx").stat().st_size, 1000)
@@ -143,7 +167,10 @@ class ArchiveManufacturingGrowthResultTests(unittest.TestCase):
         self.assertEqual(len(index), 1)
         self.assertEqual(index[0]["mode"], "draft_only")
         self.assertEqual(index[0]["source_count"], 1)
+        self.assertEqual(index[0]["source_status"], "verified_public_sources")
+        self.assertIn("product_card_path", index[0])
         self.assertIn("report.md", (self.projects_root / "index.html").read_text(encoding="utf-8"))
+        self.assertIn("产品资料卡", (self.projects_root / "index.html").read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

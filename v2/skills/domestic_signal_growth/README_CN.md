@@ -5,6 +5,7 @@
 ## 当前能力
 
 - 输入产品、行业、目标客户、平台和区域。
+- 可接收 `product_intelligence` 输出的 `product_profile`，并优先使用产品画像中的产品名称、分类、材料、规格和交期说明。
 - 通过 `search_adapter.py` 尝试使用 LobsterAI web-search bridge 获取公开来源。
 - 当 web-search 连接失效时自动重新 `launch/connect`。
 - 没有真实来源时返回 `source_status=unverified` 或 `search_failed`，不会伪造 URL。
@@ -26,6 +27,15 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "D:\OpenClaw\v2\skills\d
   "industry": "教育培训",
   "target_customers": ["培训机构", "人力资源公司"],
   "city": "全国",
+  "product_profile": {
+    "product_name": "重型包装纸箱、物流包装、出口包装",
+    "factory_type": "包装厂",
+    "location": "东莞",
+    "category": "重型包装与物流包装",
+    "summary": "面向重货、电商仓储和外贸出货的高强度纸箱。",
+    "main_specs": ["可定制尺寸"],
+    "materials": ["高强瓦楞纸"]
+  },
   "platforms": ["小红书", "抖音"],
   "mode": "draft_only",
   "search_required": true

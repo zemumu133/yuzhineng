@@ -1,0 +1,247 @@
+{
+  "product_name": "哑铃、力量训练器材、家用健身器材",
+  "factory_type": "健身器材厂",
+  "company_location": "东莞",
+  "target_customers": [
+    "健身房",
+    "经销商",
+    "跨境卖家",
+    "团购客户"
+  ],
+  "target_customer_hint": [
+    "健身房",
+    "经销商",
+    "跨境卖家",
+    "团购客户"
+  ],
+  "recommended_keywords": [
+    "东莞 健身器材厂 哑铃、力量训练器材、家用健身器材",
+    "哑铃、力量训练器材、家用健身器材 采购",
+    "哑铃、力量训练器材、家用健身器材 工厂 定制",
+    "哑铃、力量训练器材、家用健身器材 小红书 抖音 内容获客"
+  ],
+  "platforms": [
+    "小红书",
+    "抖音",
+    "公众号"
+  ],
+  "mode": "draft_only",
+  "product_profile": {
+    "product_name": "哑铃、力量训练器材、家用健身器材",
+    "factory_type": "健身器材厂",
+    "location": "东莞",
+    "category": "健身器材与力量训练产品",
+    "summary": "面向家用、商用和团购客户的力量训练产品。",
+    "main_specs": [
+      "可调节重量",
+      "定制颜色",
+      "家用/商用规格"
+    ],
+    "materials": [
+      "钢材",
+      "橡胶包胶",
+      "可调节结构"
+    ],
+    "certifications": [],
+    "delivery_notes": "unknown"
+  },
+  "product_intelligence": true,
+  "product_intelligence_output": {
+    "skill": "product_intelligence",
+    "mode": "draft_only",
+    "product_profile": {
+      "product_name": "哑铃、力量训练器材、家用健身器材",
+      "factory_type": "健身器材厂",
+      "location": "东莞",
+      "category": "健身器材与力量训练产品",
+      "summary": "面向家用、商用和团购客户的力量训练产品。",
+      "main_specs": [
+        "可调节重量",
+        "定制颜色",
+        "家用/商用规格"
+      ],
+      "materials": [
+        "钢材",
+        "橡胶包胶",
+        "可调节结构"
+      ],
+      "certifications": [],
+      "delivery_notes": "unknown"
+    },
+    "selling_points": [
+      {
+        "point": "结构稳定",
+        "evidence": "OEM/ODM；定制颜色；批量供货；健身器材客户关注安全、承重和长期使用体验。",
+        "suitable_platform": [
+          "小红书",
+          "抖音",
+          "公众号"
+        ]
+      },
+      {
+        "point": "OEM/ODM 定制",
+        "evidence": "OEM/ODM；定制颜色；批量供货；经销商和跨境卖家需要颜色、包装、规格差异化。",
+        "suitable_platform": [
+          "小红书",
+          "抖音",
+          "公众号"
+        ]
+      },
+      {
+        "point": "场景展示强",
+        "evidence": "OEM/ODM；定制颜色；批量供货；适合用居家训练、健身房陈列和团购场景做内容。",
+        "suitable_platform": [
+          "小红书",
+          "抖音",
+          "公众号"
+        ]
+      }
+    ],
+    "suitable_customer_segments": [
+      {
+        "segment": "健身房",
+        "why_fit": "关注耐用、安全、空间利用和补货稳定。",
+        "decision_makers": [
+          "老板",
+          "采购",
+          "运营"
+        ],
+        "buying_triggers": [
+          "门店升级",
+          "器械补充",
+          "私教课程更新"
+        ]
+      },
+      {
+        "segment": "经销商",
+        "why_fit": "关注利润空间、SKU 组合和供货稳定。",
+        "decision_makers": [
+          "老板",
+          "采购"
+        ],
+        "buying_triggers": [
+          "新品铺货",
+          "旺季备货",
+          "寻找工厂源头"
+        ]
+      },
+      {
+        "segment": "跨境卖家",
+        "why_fit": "关注包装体积、差异化卖点和平台素材。",
+        "decision_makers": [
+          "运营",
+          "采购",
+          "老板"
+        ],
+        "buying_triggers": [
+          "新品选品",
+          "Listing 更新",
+          "评价差异化"
+        ]
+      },
+      {
+        "segment": "团购客户",
+        "why_fit": "关注预算、批量交付和售后。",
+        "decision_makers": [
+          "行政",
+          "采购",
+          "老板"
+        ],
+        "buying_triggers": [
+          "企业福利",
+          "活动采购",
+          "健身房开业"
+        ]
+      }
+    ],
+    "application_scenarios": [
+      "家用力量训练",
+      "商用健身房配置",
+      "跨境电商选品",
+      "企业团购福利"
+    ],
+    "content_angles": {
+      "xiaohongshu": [
+        "家用哑铃怎么选不占空间",
+        "健身房器材采购避坑",
+        "包胶哑铃和普通哑铃的区别"
+      ],
+      "douyin": [
+        "10 秒展示可调节哑铃结构",
+        "健身房开业器材清单",
+        "跨境健身器材拍摄脚本"
+      ],
+      "wechat_official_account": [
+        "健身器材批量采购清单",
+        "经销商选品建议",
+        "家用健身器材 OEM 定制说明"
+      ]
+    },
+    "sales_talking_points": [
+      "先确认使用场景、承重需求和目标价位。",
+      "跨境客户需确认包装体积和平台素材。",
+      "商用客户要重点确认售后、批量交付和安全说明。"
+    ],
+    "missing_information": [
+      "缺少认证，需要人工补充后再用于报价、交期或客户承诺。",
+      "缺少交期，需要人工补充后再用于报价、交期或客户承诺。",
+      "缺少价格区间，需要人工补充后再用于报价、交期或客户承诺。"
+    ],
+    "risk_notes": [
+      "所有内容为 draft_only 草稿，不能自动发布、评论、私信或发邮件。",
+      "涉及认证、价格、交期、客户案例和合作品牌时必须人工确认。",
+      "缺少认证，需要人工补充后再用于报价、交期或客户承诺。",
+      "缺少交期，需要人工补充后再用于报价、交期或客户承诺。",
+      "缺少价格区间，需要人工补充后再用于报价、交期或客户承诺。"
+    ],
+    "next_growth_inputs": {
+      "product_name": "哑铃、力量训练器材、家用健身器材",
+      "factory_type": "健身器材厂",
+      "company_location": "东莞",
+      "target_customers": [
+        "健身房",
+        "经销商",
+        "跨境卖家",
+        "团购客户"
+      ],
+      "target_customer_hint": [
+        "健身房",
+        "经销商",
+        "跨境卖家",
+        "团购客户"
+      ],
+      "recommended_keywords": [
+        "东莞 健身器材厂 哑铃、力量训练器材、家用健身器材",
+        "哑铃、力量训练器材、家用健身器材 采购",
+        "哑铃、力量训练器材、家用健身器材 工厂 定制",
+        "哑铃、力量训练器材、家用健身器材 小红书 抖音 内容获客"
+      ],
+      "platforms": [
+        "小红书",
+        "抖音",
+        "公众号"
+      ],
+      "mode": "draft_only",
+      "product_profile": {
+        "product_name": "哑铃、力量训练器材、家用健身器材",
+        "factory_type": "健身器材厂",
+        "location": "东莞",
+        "category": "健身器材与力量训练产品",
+        "summary": "面向家用、商用和团购客户的力量训练产品。",
+        "main_specs": [
+          "可调节重量",
+          "定制颜色",
+          "家用/商用规格"
+        ],
+        "materials": [
+          "钢材",
+          "橡胶包胶",
+          "可调节结构"
+        ],
+        "certifications": [],
+        "delivery_notes": "unknown"
+      },
+      "product_intelligence": true
+    }
+  }
+}

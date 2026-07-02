@@ -82,3 +82,13 @@ __pycache__/
 # Phase 2C local project archive data and UI traces
 /v2/projects/
 /v2/data/ui-runs/
+
+# Phase 2D local UI debugging screenshots; selected evidence may be force-added
+/v2/reports/assets/phase2d-product-intelligence-ui/phase2d-ui-*.png
+/v2/reports/assets/phase2d-product-intelligence-ui/phase2d-launch-terminal.png
+/v2/reports/assets/phase2d-product-intelligence-ui/phase2d-lobster-after-minimize-others.png
+/v2/reports/assets/phase2d-product-intelligence-ui/phase2d-lobster-visible-after-clean.png
+/v2/reports/assets/phase2d-product-intelligence-ui/phase2d-task1-heavy-packaging-sent.png
+/v2/reports/assets/phase2d-product-intelligence-ui/phase2d-task1-heavy-packaging-product-understanding-ui.png
+/v2/reports/assets/phase2d-product-intelligence-ui/phase2d-task2-electronics-ready.png
+/v2/reports/assets/phase2d-product-intelligence-ui/phase2d-task2-electronics-sent.png

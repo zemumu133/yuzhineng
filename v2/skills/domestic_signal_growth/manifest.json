@@ -1,8 +1,8 @@
 {
   "id": "domestic_signal_growth",
   "name": "国内营销信号穿透",
-  "version": "0.2.0-mvp",
-  "description": "面向国内中小企业的公开信息研究、商机判断、内容建议、跟进草稿和人工待办生成 Skill。",
+  "version": "0.3.0-mvp",
+  "description": "面向国内中小企业的公开信息研究、商机判断、内容建议、跟进草稿和人工待办生成 Skill；可优先消费 product_intelligence 生成的 product_profile。",
   "entry": "domestic_signal_growth.ps1",
   "runtime": "powershell",
   "mode": "draft_only",
@@ -12,6 +12,15 @@
     "target_customers": ["目标客户类型"],
     "city": "城市或区域",
     "platforms": ["小红书", "抖音", "公众号"],
+    "product_profile": {
+      "product_name": "产品名称",
+      "factory_type": "工厂类型",
+      "location": "地区",
+      "category": "产品分类",
+      "summary": "产品摘要",
+      "main_specs": ["规格"],
+      "materials": ["材料"]
+    },
     "mode": "draft_only",
     "search_required": true
   },

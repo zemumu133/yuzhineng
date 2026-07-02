@@ -17,8 +17,10 @@ EXAMPLE_CONFIG = CONFIG_DIR / "dev-auto-run.example.json"
 LOCAL_CONFIG = CONFIG_DIR / "dev-auto-run.json"
 TEST_RUNS_DIR = V2 / "data" / "test-runs"
 MANUFACTURING_TEST_CASE_DIR = V2 / "test-cases" / "manufacturing_growth"
+PRODUCT_INTELLIGENCE_TEST_CASE_DIR = V2 / "test-cases" / "product_intelligence"
 REPORT_PATH = V2 / "reports" / "LOBSTERAI_DEV_AUTORUN_GATE_REPORT_CN.md"
 DOMESTIC_SKILL = V2 / "skills" / "domestic_signal_growth" / "domestic_signal_growth.ps1"
+PRODUCT_INTELLIGENCE_SKILL = V2 / "skills" / "product_intelligence" / "product_intelligence.ps1"
 MODEL = "deepseek/deepseek-v4-pro"
 
 
@@ -52,14 +54,14 @@ MANUFACTURING_AGENTS = [
         "id": "yuzhineng-manufacturing-chief",
         "name": "宇智能制造业获客总控 Agent",
         "description": "接收老板/运营输入，拆解制造业获客任务，汇总产品理解、商机、内容、社媒、交接单和待办。",
-        "skills": ["web-search", "domestic_signal_growth", "docx", "xlsx"],
+        "skills": ["product_intelligence", "web-search", "domestic_signal_growth", "docx", "xlsx"],
         "denied": ["真实外发", "登录社媒", "读取 secrets", "自动发布"],
     },
     {
         "id": "yuzhineng-product-analyst",
         "name": "产品理解 Agent",
         "description": "理解工厂产品资料，提炼卖点、适合客户类型、采购决策人和风险点。",
-        "skills": ["domestic_signal_growth", "docx"],
+        "skills": ["product_intelligence", "domestic_signal_growth", "docx"],
         "denied": ["真实外发", "读取 secrets"],
     },
     {
@@ -381,6 +383,34 @@ def call_domestic_skill(task: dict[str, Any]) -> dict[str, Any]:
         "code": result["code"],
         "duration_seconds": result["duration_seconds"],
         "parsed": parsed,
+        "stderr": result["stderr"][-800:],
+    }
+
+
+def call_product_intelligence(input_file: Path, output_dir: Path) -> dict[str, Any]:
+    output_file = output_dir / "product_intelligence_output.json"
+    result = run([
+        "powershell",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        str(PRODUCT_INTELLIGENCE_SKILL),
+        "-InputFile",
+        str(input_file),
+        "-OutputFile",
+        str(output_file),
+        "-OutputDir",
+        str(output_dir),
+    ], timeout=60)
+    parsed = read_json(output_file) if result["code"] == 0 and output_file.exists() else None
+    return {
+        "ok": result["code"] == 0 and parsed is not None,
+        "code": result["code"],
+        "duration_seconds": result["duration_seconds"],
+        "parsed": parsed,
+        "output_dir": str(output_dir),
+        "output_file": str(output_file),
         "stderr": result["stderr"][-800:],
     }
 
@@ -982,6 +1012,32 @@ def load_manufacturing_test_tasks() -> list[dict[str, Any]]:
     return tasks
 
 
+def load_product_intelligence_test_tasks() -> list[dict[str, Any]]:
+    mapping = [
+        ("heavy_packaging_product.json", "phase2d-001-heavy-packaging", "东莞重型包装纸箱厂产品资料理解"),
+        ("electronics_parts_product.json", "phase2d-002-electronics-parts", "东莞电子配件厂产品资料理解"),
+        ("fitness_equipment_product.json", "phase2d-003-fitness-equipment", "东莞健身器材厂产品资料理解"),
+    ]
+    tasks = []
+    for file_name, task_id, name in mapping:
+        input_file = PRODUCT_INTELLIGENCE_TEST_CASE_DIR / file_name
+        payload = read_json(input_file)
+        tasks.append(
+            {
+                "id": task_id,
+                "name": name,
+                "agent_id": "yuzhineng-manufacturing-chief",
+                "input_file": str(input_file),
+                "product": payload.get("product_name"),
+                "industry": payload.get("factory_type"),
+                "targets": payload.get("typical_customers") or [],
+                "platforms": payload.get("platforms") or ["小红书", "抖音", "公众号"],
+                "prompt": f"理解产品资料并生成获客输入：{payload.get('product_name')}",
+            }
+        )
+    return tasks
+
+
 def phase2b_safety_check(task: dict[str, Any], domestic: dict[str, Any], model_result: dict[str, Any]) -> dict[str, Any]:
     parsed = domestic.get("parsed") or {}
     text = json.dumps(parsed, ensure_ascii=False)
@@ -1183,6 +1239,63 @@ def run_phase2b() -> int:
     return 0
 
 
+def run_phase2d() -> int:
+    started_at = time.strftime("%Y-%m-%d %H:%M:%S %z")
+    run_id = "phase2d-" + time.strftime("%Y%m%d-%H%M%S")
+    config = load_enabled_config()
+    run_dir = TEST_RUNS_DIR / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    agent_results = ensure_openclaw_agents(config, MANUFACTURING_AGENTS)
+    ui_results = mirror_lobsterai_agents(config, MANUFACTURING_AGENTS)
+    task_summaries = []
+
+    for task in load_product_intelligence_test_tasks():
+        task_dir = run_dir / task["id"]
+        task_dir.mkdir(parents=True, exist_ok=True)
+        product_result = call_product_intelligence(Path(task["input_file"]), task_dir)
+        growth_input_path = task_dir / "growth_input.json"
+        growth_input = read_json(growth_input_path) if growth_input_path.exists() else {}
+        task["skill_input"] = growth_input
+        domestic = call_domestic_skill(task)
+        model_result = build_skill_only_phase2b_result(task, domestic)
+        saved = save_phase2b_task_files(run_dir, task, domestic, model_result)
+        product_profile_path = task_dir / "product_profile.json"
+        product_card_path = task_dir / "product_card.md"
+        saved.update(
+            {
+                "product_intelligence_ok": product_result.get("ok", False),
+                "product_profile_path": str(product_profile_path),
+                "product_card_path": str(product_card_path),
+                "has_product_profile": product_profile_path.exists(),
+                "has_product_card": product_card_path.exists(),
+                "domestic_used_product_profile": bool((domestic.get("parsed") or {}).get("product_understanding", {}).get("product_profile_source") == "product_intelligence"),
+            }
+        )
+        task_summaries.append(saved)
+
+    write_json(run_dir / "summary.json", {
+        "run_id": run_id,
+        "started_at": started_at,
+        "model": MODEL,
+        "agent_results": agent_results,
+        "lobsterai_ui_agent_results": ui_results,
+        "tasks": task_summaries,
+    })
+    write_json(TEST_RUNS_DIR / "latest-phase2d.json", {
+        "run_id": run_id,
+        "path": str(run_dir),
+        "completed": all(item["product_intelligence_ok"] and item["domestic_ok"] for item in task_summaries),
+    })
+    print(json.dumps({
+        "ok": True,
+        "run_id": run_id,
+        "run_dir": str(run_dir),
+        "tasks": task_summaries,
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def generate_report(run_id: str, started_at: str, config: dict[str, Any], agent_results: list[dict[str, Any]], ui_results: list[dict[str, Any]], traces: list[dict[str, Any]]) -> None:
     all_done = all(t.get("completed") for t in traces)
     all_v4 = all(t.get("model") == "deepseek-v4-pro" for t in traces)
@@ -1337,6 +1450,7 @@ def main() -> int:
     parser.add_argument("--run", action="store_true")
     parser.add_argument("--run-phase2a", action="store_true")
     parser.add_argument("--run-phase2b", action="store_true")
+    parser.add_argument("--run-phase2d", action="store_true")
     args = parser.parse_args()
 
     if args.init_local_config:
@@ -1346,6 +1460,8 @@ def main() -> int:
         return run_phase2a()
     if args.run_phase2b:
         return run_phase2b()
+    if args.run_phase2d:
+        return run_phase2d()
     if not args.run:
         parser.print_help()
         return 2

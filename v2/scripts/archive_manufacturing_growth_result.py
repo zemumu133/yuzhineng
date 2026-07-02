@@ -161,67 +161,79 @@ def build_report_md(skill_output: dict[str, Any], sources: list[dict[str, Any]])
 ## 2. 产品理解
 
 - 产品描述：{understanding.get('product_description') or '待补充'}
+- 产品分类：{understanding.get('category') or '待补充'}
+- 主要规格：{'、'.join(understanding.get('main_specs') or []) or '待补充'}
+- 材料：{'、'.join(understanding.get('materials') or []) or '待补充'}
+- 认证：{'、'.join(understanding.get('certifications') or []) or '待补充'}
+- 交期说明：{understanding.get('delivery_notes') or '待补充'}
 - 工厂能力：{'、'.join(understanding.get('factory_capabilities') or []) or '待补充'}
 - 产品卖点：{'、'.join(understanding.get('selling_points') or []) or '待补充'}
 - 适合客户：{'、'.join(understanding.get('suitable_customer_types') or []) or '待补充'}
 
-## 3. 商机判断
+## 3. 产品资料理解
+
+- 来源：{understanding.get('product_profile_source') or 'task_input'}
+- 应用场景：{'、'.join(understanding.get('application_scenarios') or []) or '待补充'}
+- 采购决策人：{'、'.join(understanding.get('decision_makers') or []) or '待补充'}
+- 内容宣传角度：{'、'.join(understanding.get('content_selling_points') or []) or '待补充'}
+
+## 4. 商机判断
 
 - 商机评分：{opportunity.get('opportunity_score') or 'unknown'}
 - 公开需求信号：{'、'.join(opportunity.get('public_demand_signals') or []) or '待补充'}
 
-## 4. 目标客户类型
+## 5. 目标客户类型
 
 {md_list(skill_output.get('target_customer_segments') or skill_output.get('target_customer_types'))}
 
-## 5. 公开来源摘要
+## 6. 公开来源摘要
 
 {chr(10).join(source_lines)}
 
-## 6. 小红书内容建议
+## 7. 小红书内容建议
 
 {md_list(materials.get('xiaohongshu_notes'))}
 
-## 7. 抖音内容建议
+## 8. 抖音内容建议
 
 {md_list(materials.get('douyin_scripts'))}
 
-## 8. 公众号内容建议
+## 9. 公众号内容建议
 
 {md_list(materials.get('wechat_article_outline'))}
 
-## 9. 评论回复草稿
+## 10. 评论回复草稿
 
 {md_list(skill_output.get('comment_reply_drafts'))}
 
-## 10. 私信草稿
+## 11. 私信草稿
 
 {md_list(skill_output.get('dm_drafts'))}
 
-## 11. 账号养成计划
+## 12. 账号养成计划
 
 {md_list(skill_output.get('account_nurturing_plan'))}
 
-## 12. 工厂销售交接建议
+## 13. 工厂销售交接建议
 
 - 交接标题：{handoff.get('handoff_title') or product + ' 客户交接单'}
 - 推荐跟进人：{handoff.get('recommended_owner') or '工厂销售或老板'}
 - 需求确认问题：
 {md_list(handoff.get('qualification_questions'))}
 
-## 13. 待办事项
+## 14. 待办事项
 
 {md_list(skill_output.get('todos'))}
 
-## 14. 风险提醒
+## 15. 风险提醒
 
 {md_list(skill_output.get('risk_notes'))}
 
-## 15. 下一步建议
+## 16. 下一步建议
 
 {md_list(skill_output.get('next_steps'))}
 
-## 16. draft_only 声明
+## 17. draft_only 声明
 
 本项目所有内容均为 draft_only 草稿。尚未真实发布、评论、私信或发邮件；涉及报价、交期、认证、客户案例、联系方式和外部触达的动作必须人工复核后在外部平台手动执行。
 """
@@ -239,6 +251,8 @@ def build_handoff_docx(path: Path, skill_output: dict[str, Any], sources: list[d
     understanding = skill_output.get("product_understanding") or {}
     handoff = skill_output.get("factory_handoff_sheet") or {}
     product = understanding.get("product_name") or skill_output.get("product") or "制造业产品"
+    selling_points = "、".join(understanding.get("selling_points") or []) or "待人工确认"
+    suitable_customers = "、".join(understanding.get("suitable_customer_types") or []) or "待人工确认"
     segments = skill_output.get("target_customer_segments") or skill_output.get("target_customer_types") or []
     first_segment = segments[0] if segments and isinstance(segments[0], dict) else {}
     source_title = sources[0].get("title") if sources else "unknown"
@@ -248,6 +262,8 @@ def build_handoff_docx(path: Path, skill_output: dict[str, Any], sources: list[d
         f"客户类型：{first_segment.get('type') or '待人工确认'}",
         f"需求判断：{'、'.join(first_segment.get('pain_points') or []) or '待人工确认'}",
         f"适合推荐的产品：{product}",
+        f"产品卖点：{selling_points}",
+        f"适合客户：{suitable_customers}",
         "推荐跟进话术：先确认客户规格、数量、交期、使用场景和认证要求，再由工厂销售人工报价。",
         "报价/询盘信息待补充：规格、图纸/样品、数量、交期、包装、认证、收货地区。",
         f"工厂负责人：{handoff.get('recommended_owner') or '工厂销售或老板'}",
@@ -318,6 +334,9 @@ def build_readme(project_name: str, manifest: dict[str, Any]) -> str:
 
 def generated_file_paths(project_dir: Path) -> dict[str, str]:
     return {
+        "product_profile": str(project_dir / "product_profile.json"),
+        "product_card": str(project_dir / "product_card.md"),
+        "growth_input": str(project_dir / "growth_input.json"),
         "report_md": str(project_dir / "report.md"),
         "handoff_docx": str(project_dir / "handoff.docx"),
         "readme": str(project_dir / "README_CN.md"),
@@ -389,6 +408,8 @@ def update_projects_index(projects_root: Path, manifest: dict[str, Any]) -> None
             "mode": "draft_only",
             "report_path": manifest["generated_files"]["report_md"],
             "handoff_path": manifest["generated_files"]["handoff_docx"],
+            "product_card_path": manifest["generated_files"]["product_card"],
+            "source_status": manifest.get("source_status") or "unknown",
             "todo_count": len(manifest.get("todos") or []),
             "source_count": manifest.get("source_count", 0),
         }
@@ -399,6 +420,8 @@ def update_projects_index(projects_root: Path, manifest: dict[str, Any]) -> None
 
 
 def file_href(index_dir: Path, target: str) -> str:
+    if not target:
+        return ""
     try:
         relative = Path(target).resolve().relative_to(index_dir.resolve())
         return html.escape(relative.as_posix())
@@ -409,6 +432,12 @@ def file_href(index_dir: Path, target: str) -> str:
 def write_projects_html(projects_root: Path, index: list[dict[str, Any]]) -> None:
     rows = []
     for item in index:
+        product_card_href = file_href(projects_root, item.get("product_card_path", ""))
+        product_card_cell = (
+            f"<a href=\"{product_card_href}\">打开产品资料卡</a>"
+            if product_card_href
+            else "<span class=\"muted\">未归档</span>"
+        )
         report_href = file_href(projects_root, item.get("report_path", ""))
         handoff_href = file_href(projects_root, item.get("handoff_path", ""))
         project_dir = Path(item.get("report_path", "")).parent
@@ -420,7 +449,9 @@ def write_projects_html(projects_root: Path, index: list[dict[str, Any]]) -> Non
             f"<td>{html.escape(item.get('factory_type') or '')}</td>"
             f"<td>{html.escape(item.get('mode') or '')}</td>"
             f"<td>{item.get('source_count', 0)}</td>"
+            f"<td>{html.escape(item.get('source_status') or 'unknown')}</td>"
             f"<td>{item.get('todo_count', 0)}</td>"
+            f"<td>{product_card_cell}</td>"
             f"<td><a href=\"{report_href}\">打开推广方案</a></td>"
             f"<td><a href=\"{handoff_href}\">打开交接单</a></td>"
             f"<td><a href=\"{todos_href}\">打开待办</a></td>"
@@ -439,6 +470,7 @@ def write_projects_html(projects_root: Path, index: list[dict[str, Any]]) -> Non
     th, td {{ padding: 12px 14px; border-bottom: 1px solid #e5eaf2; text-align: left; font-size: 14px; }}
     th {{ background: #f1f5f9; }}
     a {{ color: #0f766e; font-weight: 600; text-decoration: none; }}
+    .muted {{ color: #94a3b8; }}
     .notice {{ margin: 16px 0; padding: 12px 14px; background: #ecfdf5; border: 1px solid #99f6e4; border-radius: 8px; }}
   </style>
 </head>
@@ -448,10 +480,10 @@ def write_projects_html(projects_root: Path, index: list[dict[str, Any]]) -> Non
   <div class="notice">项目索引文件：projects_index.json</div>
   <table>
     <thead>
-      <tr><th>生成时间</th><th>产品</th><th>工厂类型</th><th>模式</th><th>来源</th><th>待办</th><th>推广方案</th><th>交接单</th><th>待办</th></tr>
+      <tr><th>生成时间</th><th>产品名称</th><th>工厂类型</th><th>模式</th><th>来源</th><th>source_status</th><th>待办数量</th><th>产品资料卡</th><th>推广方案</th><th>客户交接单</th><th>待办</th></tr>
     </thead>
     <tbody>
-      {''.join(rows) if rows else '<tr><td colspan="9">暂无项目，请先运行一次制造业获客任务。</td></tr>'}
+      {''.join(rows) if rows else '<tr><td colspan="11">暂无项目，请先运行一次制造业获客任务。</td></tr>'}
     </tbody>
   </table>
 </body>
@@ -474,6 +506,91 @@ def copy_or_generate_docx(project_dir: Path, skill_output: dict[str, Any], sourc
         shutil.copy2(source_file, target)
     else:
         build_handoff_docx(target, skill_output, sources)
+
+
+def build_product_profile(skill_output: dict[str, Any], input_data: dict[str, Any]) -> dict[str, Any]:
+    understanding = skill_output.get("product_understanding") or {}
+    profile = input_data.get("product_profile") if isinstance(input_data.get("product_profile"), dict) else {}
+    return {
+        "product_name": profile.get("product_name") or understanding.get("product_name") or input_data.get("product_name") or skill_output.get("product") or "制造业产品",
+        "factory_type": profile.get("factory_type") or understanding.get("factory_type") or input_data.get("factory_type") or skill_output.get("industry") or "制造业工厂",
+        "location": profile.get("location") or understanding.get("location") or input_data.get("company_location") or skill_output.get("city") or "东莞",
+        "category": profile.get("category") or understanding.get("category") or "制造业定制产品",
+        "summary": profile.get("summary") or understanding.get("product_description") or input_data.get("product_description") or "",
+        "main_specs": profile.get("main_specs") or understanding.get("main_specs") or input_data.get("specifications") or [],
+        "materials": profile.get("materials") or understanding.get("materials") or input_data.get("materials") or [],
+        "certifications": profile.get("certifications") or understanding.get("certifications") or input_data.get("certifications") or [],
+        "delivery_notes": profile.get("delivery_notes") or understanding.get("delivery_notes") or input_data.get("delivery_cycle") or "unknown",
+    }
+
+
+def build_product_card_md(product_profile: dict[str, Any], skill_output: dict[str, Any]) -> str:
+    understanding = skill_output.get("product_understanding") or {}
+    segments = skill_output.get("target_customer_segments") or skill_output.get("target_customer_types") or []
+    materials = product_profile.get("materials") or []
+    specs = product_profile.get("main_specs") or []
+    certifications = product_profile.get("certifications") or []
+    selling_points = understanding.get("selling_points") or []
+    lines = [
+        f"# {product_profile.get('product_name')} 产品资料卡",
+        "",
+        "## 产品资料卡",
+        "",
+        f"- 地区：{product_profile.get('location') or 'unknown'}",
+        f"- 工厂类型：{product_profile.get('factory_type') or 'unknown'}",
+        f"- 产品分类：{product_profile.get('category') or 'unknown'}",
+        f"- 产品摘要：{product_profile.get('summary') or '待补充'}",
+        f"- 主要规格：{'、'.join(specs) if specs else '待补充'}",
+        f"- 材料：{'、'.join(materials) if materials else '待补充'}",
+        f"- 认证：{'、'.join(certifications) if certifications else '待人工确认'}",
+        f"- 交期：{product_profile.get('delivery_notes') or '待补充'}",
+        "",
+        "## 产品卖点",
+    ]
+    for point in selling_points or ["待补充真实卖点"]:
+        lines.append(f"- {point}")
+    lines.extend(["", "## 适合客户"])
+    for item in segments:
+        if isinstance(item, dict):
+            title = item.get("segment") or item.get("type") or "客户类型"
+            why = item.get("why_fit") or "、".join(item.get("pain_points") or []) or "待补充"
+            makers = "、".join(item.get("decision_makers") or [])
+            lines.append(f"- {title}：{why}" + (f"；决策人：{makers}" if makers else ""))
+    if not segments:
+        lines.append("- 待补充适合客户。")
+    lines.extend(["", "## 销售跟进重点"])
+    handoff = skill_output.get("factory_handoff_sheet") or {}
+    for question in handoff.get("qualification_questions") or ["规格、数量、交期、使用场景、认证要求"]:
+        lines.append(f"- {question}")
+    lines.extend(["", "## draft_only 声明", "", "本产品资料卡仅用于内部理解和草稿生成，不真实发布、评论、私信或发邮件。"])
+    return "\n".join(lines) + "\n"
+
+
+def build_growth_input(input_data: dict[str, Any], product_profile: dict[str, Any], skill_output: dict[str, Any]) -> dict[str, Any]:
+    targets = (
+        input_data.get("target_customer_hint")
+        or input_data.get("target_customers")
+        or [item.get("segment") or item.get("type") for item in skill_output.get("target_customer_segments", []) if isinstance(item, dict)]
+    )
+    return {
+        "company_location": product_profile.get("location") or input_data.get("company_location") or "东莞",
+        "factory_type": product_profile.get("factory_type") or input_data.get("factory_type") or skill_output.get("industry"),
+        "product_name": product_profile.get("product_name") or input_data.get("product_name") or skill_output.get("product"),
+        "product_profile": product_profile,
+        "target_customer_hint": targets or [],
+        "platforms": input_data.get("platforms") or ["小红书", "抖音", "公众号"],
+        "mode": "draft_only",
+        "search_required": True,
+        "source_status": skill_output.get("source_status") or "unknown",
+    }
+
+
+def write_product_assets(project_dir: Path, input_data: dict[str, Any], skill_output: dict[str, Any]) -> dict[str, Any]:
+    product_profile = build_product_profile(skill_output, input_data)
+    write_json(project_dir / "product_profile.json", product_profile)
+    write_text(project_dir / "product_card.md", build_product_card_md(product_profile, skill_output))
+    write_json(project_dir / "growth_input.json", build_growth_input(input_data, product_profile, skill_output))
+    return product_profile
 
 
 def archive_task_output(
@@ -519,6 +636,7 @@ def archive_task_output(
 
     copy_or_generate_report(project_dir, skill_output, sources, Path(report_source) if report_source else None)
     copy_or_generate_docx(project_dir, skill_output, sources, Path(handoff_source) if handoff_source else None)
+    write_product_assets(project_dir, input_data, skill_output)
 
     manifest = build_manifest(project_id, project_name, project_dir, input_data, skill_output, sources, todos, safety, created_at)
     write_json(project_dir / "project_manifest.json", manifest)

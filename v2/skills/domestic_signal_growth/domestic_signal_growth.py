@@ -87,12 +87,13 @@ def generate_signal_report(payload: dict[str, Any], searcher: Any | None = None)
 def normalize_input(payload: dict[str, Any]) -> dict[str, Any]:
     merged = dict(DEFAULT_INPUT)
     payload = payload or {}
+    profile = payload.get("product_profile") if isinstance(payload.get("product_profile"), dict) else {}
     provided_industry = bool(payload.get("industry"))
     merged.update(payload or {})
-    product_value = merged.get("product_name") or merged.get("product") or DEFAULT_INPUT["product"]
+    product_value = profile.get("product_name") or merged.get("product_name") or merged.get("product") or DEFAULT_INPUT["product"]
     targets_value = merged.get("target_customer_hint") or merged.get("target_customers") or merged.get("targets") or DEFAULT_INPUT["target_customers"]
-    company_location = merged.get("company_location") or merged.get("city") or "全国"
-    factory_type = str(merged.get("factory_type") or "").strip()
+    company_location = profile.get("location") or merged.get("company_location") or merged.get("city") or "全国"
+    factory_type = str(profile.get("factory_type") or merged.get("factory_type") or "").strip()
     if factory_type and not provided_industry:
         merged["industry"] = factory_type
     merged["product"] = str(product_value).strip()
@@ -101,7 +102,13 @@ def normalize_input(payload: dict[str, Any]) -> dict[str, Any]:
     merged["city"] = str(company_location).strip()
     merged["company_location"] = str(company_location).strip()
     merged["factory_type"] = factory_type
-    merged["product_description"] = str(merged.get("product_description") or "").strip()
+    merged["product_profile"] = profile
+    merged["product_description"] = str(profile.get("summary") or merged.get("product_description") or "").strip()
+    merged["product_category"] = str(profile.get("category") or merged.get("product_category") or "").strip()
+    merged["main_specs"] = normalize_list(profile.get("main_specs") or merged.get("main_specs") or merged.get("specifications") or [])
+    merged["materials"] = normalize_list(profile.get("materials") or merged.get("materials") or [])
+    merged["certifications"] = normalize_list(profile.get("certifications") or merged.get("certifications") or [])
+    merged["delivery_notes"] = str(profile.get("delivery_notes") or merged.get("delivery_cycle") or merged.get("delivery_notes") or "").strip()
     merged["factory_capabilities"] = normalize_list(merged.get("factory_capabilities") or [])
     merged["target_customers"] = normalize_list(targets_value)
     merged["target_customer_hint"] = merged["target_customers"]
@@ -225,6 +232,8 @@ def build_manufacturing_workflow_fields(
     capabilities = task.get("factory_capabilities") or template.get("factory_capabilities", [])
     selling_points = template.get("selling_points", [])
     applications = template.get("applications", [])
+    profile = task.get("product_profile") or {}
+    profile_source = "product_intelligence" if profile else "task_input"
     content_materials = build_content_materials(task, template)
     comment_reply_drafts = build_comment_reply_drafts(task, template)
     dm_drafts = build_dm_drafts(task, template)
@@ -234,7 +243,13 @@ def build_manufacturing_workflow_fields(
             "location": location,
             "factory_type": factory_type,
             "product_name": product,
+            "product_profile_source": profile_source,
+            "category": task.get("product_category") or template.get("default_category", factory_type),
             "product_description": task.get("product_description") or template.get("default_description", ""),
+            "main_specs": task.get("main_specs") or [],
+            "materials": task.get("materials") or [],
+            "certifications": task.get("certifications") or [],
+            "delivery_notes": task.get("delivery_notes") or "",
             "factory_capabilities": capabilities,
             "selling_points": selling_points,
             "suitable_customer_types": [item["type"] for item in template["target_customer_types"]],
@@ -280,11 +295,19 @@ def build_content_materials(task: dict[str, Any], template: dict[str, Any]) -> d
     strategy = build_platform_strategy(task, template)
     product = task["product"]
     sales_points = "、".join(template.get("selling_points", [])[:3])
+    profile_details = "、".join(
+        [value for value in [
+            task.get("product_description"),
+            "、".join(task.get("materials") or []),
+            "、".join(task.get("main_specs") or []),
+            task.get("delivery_notes"),
+        ] if value]
+    )
     return {
         "xiaohongshu_notes": strategy.get("xiaohongshu", {}).get("content_ideas", []),
         "douyin_scripts": strategy.get("douyin", {}).get("content_ideas", []),
         "wechat_article_outline": strategy.get("wechat_official_account", {}).get("content_ideas", []),
-        "product_intro_copy": f"{product} 适合关注{sales_points}的客户。建议用真实工厂能力、交付边界和应用场景做保守表达。",
+        "product_intro_copy": f"{product} 适合关注{sales_points}的客户。{profile_details}。建议用真实工厂能力、交付边界和应用场景做保守表达。",
         "sales_talk_track": [
             f"先确认客户产品、尺寸、数量、交期和使用场景，再判断 {product} 是否匹配。",
             "不直接承诺价格和交期，先收集需求后交给工厂销售复核。",

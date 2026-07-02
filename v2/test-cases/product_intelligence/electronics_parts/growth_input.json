@@ -1,0 +1,247 @@
+{
+  "product_name": "电子连接件、线束、充电配件",
+  "factory_type": "电子配件厂",
+  "company_location": "东莞",
+  "target_customers": [
+    "电子厂",
+    "品牌商",
+    "跨境卖家",
+    "维修渠道"
+  ],
+  "target_customer_hint": [
+    "电子厂",
+    "品牌商",
+    "跨境卖家",
+    "维修渠道"
+  ],
+  "recommended_keywords": [
+    "东莞 电子配件厂 电子连接件、线束、充电配件",
+    "电子连接件、线束、充电配件 采购",
+    "电子连接件、线束、充电配件 工厂 定制",
+    "电子连接件、线束、充电配件 小红书 抖音 内容获客"
+  ],
+  "platforms": [
+    "小红书",
+    "抖音",
+    "公众号"
+  ],
+  "mode": "draft_only",
+  "product_profile": {
+    "product_name": "电子连接件、线束、充电配件",
+    "factory_type": "电子配件厂",
+    "location": "东莞",
+    "category": "电子配件与连接组件",
+    "summary": "面向电子厂、品牌商和维修渠道的电子配件。",
+    "main_specs": [
+      "定制线束",
+      "小批量打样",
+      "批量生产"
+    ],
+    "materials": [
+      "铜件",
+      "塑胶外壳",
+      "线材"
+    ],
+    "certifications": [],
+    "delivery_notes": "unknown"
+  },
+  "product_intelligence": true,
+  "product_intelligence_output": {
+    "skill": "product_intelligence",
+    "mode": "draft_only",
+    "product_profile": {
+      "product_name": "电子连接件、线束、充电配件",
+      "factory_type": "电子配件厂",
+      "location": "东莞",
+      "category": "电子配件与连接组件",
+      "summary": "面向电子厂、品牌商和维修渠道的电子配件。",
+      "main_specs": [
+        "定制线束",
+        "小批量打样",
+        "批量生产"
+      ],
+      "materials": [
+        "铜件",
+        "塑胶外壳",
+        "线材"
+      ],
+      "certifications": [],
+      "delivery_notes": "unknown"
+    },
+    "selling_points": [
+      {
+        "point": "规格匹配",
+        "evidence": "打样；小批量；批量生产；电子配件采购首先关注尺寸、接口、线规和兼容性。",
+        "suitable_platform": [
+          "小红书",
+          "抖音",
+          "公众号"
+        ]
+      },
+      {
+        "point": "打样速度",
+        "evidence": "打样；小批量；批量生产；品牌商和电子厂常先小批量验证，再进入量产。",
+        "suitable_platform": [
+          "小红书",
+          "抖音",
+          "公众号"
+        ]
+      },
+      {
+        "point": "定制生产",
+        "evidence": "打样；小批量；批量生产；线束、连接件和充电配件通常需要按图纸或样品定制。",
+        "suitable_platform": [
+          "小红书",
+          "抖音",
+          "公众号"
+        ]
+      }
+    ],
+    "suitable_customer_segments": [
+      {
+        "segment": "电子厂",
+        "why_fit": "关注规格稳定、交期和批量一致性。",
+        "decision_makers": [
+          "采购",
+          "工程",
+          "生产主管"
+        ],
+        "buying_triggers": [
+          "新品量产",
+          "替换供应商",
+          "BOM 降本"
+        ]
+      },
+      {
+        "segment": "品牌商",
+        "why_fit": "关注认证、外观、可靠性和定制能力。",
+        "decision_makers": [
+          "产品经理",
+          "采购",
+          "老板"
+        ],
+        "buying_triggers": [
+          "新品开发",
+          "售后问题",
+          "供应链备选"
+        ]
+      },
+      {
+        "segment": "跨境卖家",
+        "why_fit": "关注小批量、包装、上新速度和素材。",
+        "decision_makers": [
+          "运营",
+          "采购",
+          "老板"
+        ],
+        "buying_triggers": [
+          "新品测试",
+          "平台上新",
+          "差评改善"
+        ]
+      },
+      {
+        "segment": "维修渠道",
+        "why_fit": "关注常用型号、补货速度和性价比。",
+        "decision_makers": [
+          "老板",
+          "采购"
+        ],
+        "buying_triggers": [
+          "高频维修件缺货",
+          "型号替换",
+          "备货"
+        ]
+      }
+    ],
+    "application_scenarios": [
+      "电子产品组装",
+      "新品打样",
+      "维修替换件补货",
+      "跨境配件上新"
+    ],
+    "content_angles": {
+      "xiaohongshu": [
+        "线束打样前要准备哪些资料",
+        "电子连接件采购怎么避免规格错",
+        "充电配件定制要确认的参数"
+      ],
+      "douyin": [
+        "30 秒看懂线束打样流程",
+        "连接件规格确认清单",
+        "电子配件小批量生产现场"
+      ],
+      "wechat_official_account": [
+        "电子连接件询价模板",
+        "线束打样资料清单",
+        "电子配件供应商筛选建议"
+      ]
+    },
+    "sales_talking_points": [
+      "先确认图纸、样品、线规、接口和使用场景。",
+      "量产前建议安排样品验证和小批量试产。",
+      "涉及认证和品牌适配时必须人工复核，不做绝对承诺。"
+    ],
+    "missing_information": [
+      "缺少认证，需要人工补充后再用于报价、交期或客户承诺。",
+      "缺少交期，需要人工补充后再用于报价、交期或客户承诺。",
+      "缺少价格区间，需要人工补充后再用于报价、交期或客户承诺。"
+    ],
+    "risk_notes": [
+      "所有内容为 draft_only 草稿，不能自动发布、评论、私信或发邮件。",
+      "涉及认证、价格、交期、客户案例和合作品牌时必须人工确认。",
+      "缺少认证，需要人工补充后再用于报价、交期或客户承诺。",
+      "缺少交期，需要人工补充后再用于报价、交期或客户承诺。",
+      "缺少价格区间，需要人工补充后再用于报价、交期或客户承诺。"
+    ],
+    "next_growth_inputs": {
+      "product_name": "电子连接件、线束、充电配件",
+      "factory_type": "电子配件厂",
+      "company_location": "东莞",
+      "target_customers": [
+        "电子厂",
+        "品牌商",
+        "跨境卖家",
+        "维修渠道"
+      ],
+      "target_customer_hint": [
+        "电子厂",
+        "品牌商",
+        "跨境卖家",
+        "维修渠道"
+      ],
+      "recommended_keywords": [
+        "东莞 电子配件厂 电子连接件、线束、充电配件",
+        "电子连接件、线束、充电配件 采购",
+        "电子连接件、线束、充电配件 工厂 定制",
+        "电子连接件、线束、充电配件 小红书 抖音 内容获客"
+      ],
+      "platforms": [
+        "小红书",
+        "抖音",
+        "公众号"
+      ],
+      "mode": "draft_only",
+      "product_profile": {
+        "product_name": "电子连接件、线束、充电配件",
+        "factory_type": "电子配件厂",
+        "location": "东莞",
+        "category": "电子配件与连接组件",
+        "summary": "面向电子厂、品牌商和维修渠道的电子配件。",
+        "main_specs": [
+          "定制线束",
+          "小批量打样",
+          "批量生产"
+        ],
+        "materials": [
+          "铜件",
+          "塑胶外壳",
+          "线材"
+        ],
+        "certifications": [],
+        "delivery_notes": "unknown"
+      },
+      "product_intelligence": true
+    }
+  }
+}
