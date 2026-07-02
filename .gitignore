@@ -76,3 +76,9 @@ __pycache__/
 # Phase 1A Dev Auto-Run local-only config and generated test traces
 /v2/dev-config/dev-auto-run.json
 /v2/data/test-runs/
+/v2/reports/assets/lobsterai/ui-*.png
+/v2/reports/assets/lobsterai/pending-*.txt
+
+# Phase 2C local project archive data and UI traces
+/v2/projects/
+/v2/data/ui-runs/
