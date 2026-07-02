@@ -112,6 +112,99 @@ class DomesticSignalGrowthTests(unittest.TestCase):
         self.assertEqual(output["sources"], [])
         self.assertTrue(any("没有真实公开来源" in note for note in output["risk_notes"]))
 
+    def test_dongguan_manufacturing_output_has_productized_workflow_fields(self):
+        from domestic_signal_growth import generate_signal_report
+
+        output = generate_signal_report(
+            {
+                "company_location": "东莞",
+                "factory_type": "包装厂",
+                "product_name": "重型包装纸箱、物流包装、出口包装",
+                "product_description": "面向重货、电商仓储和外贸出货的高强度纸箱。",
+                "factory_capabilities": ["重型瓦楞纸箱定制", "出口包装", "打样"],
+                "target_customer_hint": ["电商仓储", "制造工厂", "物流公司", "外贸企业"],
+                "platforms": ["小红书", "抖音", "公众号"],
+                "mode": "draft_only",
+                "search_required": True,
+            },
+            searcher=FakeSearcher(),
+        )
+
+        required_fields = [
+            "product_understanding",
+            "opportunity_discovery",
+            "target_customer_segments",
+            "public_sources",
+            "content_materials",
+            "social_publish_plan",
+            "comment_reply_drafts",
+            "dm_drafts",
+            "account_nurturing_plan",
+            "factory_handoff_sheet",
+        ]
+        for field in required_fields:
+            self.assertIn(field, output)
+        self.assertEqual(output["mode"], "draft_only")
+        self.assertEqual(output["industry"], "包装厂")
+        self.assertEqual(output["product_understanding"]["factory_type"], "包装厂")
+        self.assertIn("销售交接单", output["factory_handoff_sheet"]["handoff_title"])
+        self.assertTrue(output["factory_handoff_sheet"]["requires_human_review"])
+
+    def test_packaging_fitness_and_electronics_manufacturing_templates_are_distinct(self):
+        from domestic_signal_growth import generate_signal_report
+
+        cases = [
+            {
+                "factory_type": "包装厂",
+                "product_name": "重型包装纸箱",
+                "target_customer_hint": ["电商仓储", "制造工厂", "物流公司"],
+            },
+            {
+                "factory_type": "健身器材厂",
+                "product_name": "哑铃、力量训练器材、家用健身器材",
+                "target_customer_hint": ["健身房", "经销商", "跨境卖家"],
+            },
+            {
+                "factory_type": "电子配件厂",
+                "product_name": "电子连接件、线束、充电配件",
+                "target_customer_hint": ["电子厂", "品牌商", "跨境卖家", "维修渠道"],
+            },
+        ]
+        outputs = [
+            generate_signal_report(
+                {
+                    "company_location": "东莞",
+                    "platforms": ["小红书", "抖音", "公众号"],
+                    "mode": "draft_only",
+                    "search_required": True,
+                    **case,
+                },
+                searcher=FakeSearcher(),
+            )
+            for case in cases
+        ]
+
+        packaging_text = jsonish(outputs[0])
+        fitness_text = jsonish(outputs[1])
+        electronics_text = jsonish(outputs[2])
+
+        self.assertIn("承重", packaging_text)
+        self.assertIn("货损", packaging_text)
+        self.assertIn("空间", fitness_text)
+        self.assertIn("经销商", fitness_text)
+        self.assertIn("线束", electronics_text)
+        self.assertIn("品牌商", electronics_text)
+        self.assertNotIn("健身房", electronics_text)
+        self.assertNotIn("哑铃", electronics_text)
+        self.assertNotIn("健身房", packaging_text)
+        self.assertNotIn("纸箱", electronics_text)
+
+
+def jsonish(value):
+    import json
+
+    return json.dumps(value, ensure_ascii=False)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -50,5 +50,6 @@
   "openclaw_cli": "D:\\DevTools\\node\\npm-global\\openclaw.cmd",
   "lobsterai_sqlite": "%APPDATA%\\LobsterAI\\lobsterai.sqlite",
   "mirror_agents_to_lobsterai_ui": true,
+  "phase2b_enable_openclaw_model_validation": false,
   "external_action_mode": "draft_only"
 }

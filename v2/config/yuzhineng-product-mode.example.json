@@ -1,0 +1,35 @@
+{
+  "product_name": "宇智能",
+  "target_segment": "东莞本地制造业企业",
+  "mode": "manufacturing_growth",
+  "default_model": "deepseek-v4-pro",
+  "normal_mode": true,
+  "advanced_mode_available": true,
+  "hide_generic_customization_in_normal_mode": true,
+  "external_actions_default": "draft_only",
+  "approval_required_for_external_actions": true,
+  "normal_mode_navigation": [
+    "我要找客户",
+    "我要生成宣传内容",
+    "我要处理评论/私信",
+    "我要养账号",
+    "我要把客户转给工厂",
+    "今日待办",
+    "获客报告"
+  ],
+  "advanced_mode_keeps": [
+    "通用 Agent 创建",
+    "通用 Skill 市场",
+    "MCP 高级配置",
+    "模型高级路由",
+    "底层开发者设置"
+  ],
+  "safety": {
+    "real_posting": false,
+    "real_commenting": false,
+    "real_dm": false,
+    "real_email": false,
+    "social_login": false,
+    "read_secrets": false
+  }
+}

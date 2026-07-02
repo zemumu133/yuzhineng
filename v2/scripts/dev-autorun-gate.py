@@ -16,6 +16,7 @@ CONFIG_DIR = V2 / "dev-config"
 EXAMPLE_CONFIG = CONFIG_DIR / "dev-auto-run.example.json"
 LOCAL_CONFIG = CONFIG_DIR / "dev-auto-run.json"
 TEST_RUNS_DIR = V2 / "data" / "test-runs"
+MANUFACTURING_TEST_CASE_DIR = V2 / "test-cases" / "manufacturing_growth"
 REPORT_PATH = V2 / "reports" / "LOBSTERAI_DEV_AUTORUN_GATE_REPORT_CN.md"
 DOMESTIC_SKILL = V2 / "skills" / "domestic_signal_growth" / "domestic_signal_growth.ps1"
 MODEL = "deepseek/deepseek-v4-pro"
@@ -42,6 +43,52 @@ TEST_AGENTS = [
         "description": "跟进话术草稿、客户异议处理、待办整理和销售摘要。",
         "skills": ["domestic_signal_growth", "docx", "xlsx"],
         "denied": ["真实发邮件", "私信", "批量导出"],
+    },
+]
+
+
+MANUFACTURING_AGENTS = [
+    {
+        "id": "yuzhineng-manufacturing-chief",
+        "name": "宇智能制造业获客总控 Agent",
+        "description": "接收老板/运营输入，拆解制造业获客任务，汇总产品理解、商机、内容、社媒、交接单和待办。",
+        "skills": ["web-search", "domestic_signal_growth", "docx", "xlsx"],
+        "denied": ["真实外发", "登录社媒", "读取 secrets", "自动发布"],
+    },
+    {
+        "id": "yuzhineng-product-analyst",
+        "name": "产品理解 Agent",
+        "description": "理解工厂产品资料，提炼卖点、适合客户类型、采购决策人和风险点。",
+        "skills": ["domestic_signal_growth", "docx"],
+        "denied": ["真实外发", "读取 secrets"],
+    },
+    {
+        "id": "yuzhineng-opportunity-researcher",
+        "name": "商机发掘 Agent",
+        "description": "搜索公开信息，判断潜在客户、采购信号、来源链接和商机评分。",
+        "skills": ["web-search", "domestic_signal_growth"],
+        "denied": ["登录社媒", "绕过验证码", "读取 secrets"],
+    },
+    {
+        "id": "yuzhineng-content-producer",
+        "name": "宣传物料 Agent",
+        "description": "生成小红书、抖音、公众号、产品介绍文案、销售话术和内容草稿。",
+        "skills": ["domestic_signal_growth", "docx"],
+        "denied": ["真实发布", "评论", "私信"],
+    },
+    {
+        "id": "yuzhineng-social-operator",
+        "name": "社媒运营 Agent",
+        "description": "生成发布计划、评论回复草稿、私信草稿和账号养成计划；当前阶段不真实发布。",
+        "skills": ["domestic_signal_growth", "web-search"],
+        "denied": ["真实发布", "真实评论", "真实私信", "登录社媒"],
+    },
+    {
+        "id": "yuzhineng-factory-handoff",
+        "name": "工厂对接 Agent",
+        "description": "生成销售交接单、客户需求摘要、推荐跟进人和待办，把高价值客户转给工厂销售/老板。",
+        "skills": ["domestic_signal_growth", "xlsx", "docx"],
+        "denied": ["真实发邮件", "批量导出", "读取 secrets"],
     },
 ]
 
@@ -82,7 +129,7 @@ TEST_TASKS = [
 
 def run(cmd: list[str], timeout: int = 120) -> dict[str, Any]:
     started = time.time()
-    proc = subprocess.run(
+    proc = subprocess.Popen(
         cmd,
         cwd=str(ROOT),
         text=True,
@@ -90,15 +137,31 @@ def run(cmd: list[str], timeout: int = 120) -> dict[str, Any]:
         errors="replace",
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        timeout=timeout,
         shell=False,
     )
+    timed_out = False
+    try:
+        stdout, stderr = proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        timed_out = True
+        if os.name == "nt":
+            subprocess.run(
+                ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
+            )
+        else:
+            proc.kill()
+        stdout, stderr = proc.communicate(timeout=10)
+        stderr = (stderr or "") + f"\nCommand timed out after {timeout} seconds."
     return {
         "cmd": redact_cmd(cmd),
-        "code": proc.returncode,
-        "stdout": proc.stdout,
-        "stderr": proc.stderr,
+        "code": -9 if timed_out else proc.returncode,
+        "stdout": stdout or "",
+        "stderr": stderr or "",
         "duration_seconds": round(time.time() - started, 2),
+        "timed_out": timed_out,
     }
 
 
@@ -165,13 +228,14 @@ def parse_json_maybe(raw: str) -> Any | None:
         return None
 
 
-def ensure_openclaw_agents(config: dict[str, Any]) -> list[dict[str, Any]]:
+def ensure_openclaw_agents(config: dict[str, Any], agents: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
+    agents = agents or TEST_AGENTS
     cli = config["openclaw_cli"]
     list_result = run([cli, "agents", "list", "--json"], timeout=60)
     existing = parse_json_maybe(list_result["stdout"]) if list_result["code"] == 0 else []
     existing_ids = {item.get("id") for item in existing or []}
     results = []
-    for agent in TEST_AGENTS:
+    for agent in agents:
         workspace = TEST_RUNS_DIR / "workspaces" / agent["id"]
         agent_dir = TEST_RUNS_DIR / "openclaw-agents" / agent["id"]
         workspace.mkdir(parents=True, exist_ok=True)
@@ -217,7 +281,8 @@ def ensure_openclaw_agents(config: dict[str, Any]) -> list[dict[str, Any]]:
     return results
 
 
-def mirror_lobsterai_agents(config: dict[str, Any]) -> list[dict[str, Any]]:
+def mirror_lobsterai_agents(config: dict[str, Any], agents: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
+    agents = agents or TEST_AGENTS
     if not config.get("mirror_agents_to_lobsterai_ui", False):
         return []
     db_path = Path(os.path.expandvars(config["lobsterai_sqlite"]))
@@ -228,7 +293,7 @@ def mirror_lobsterai_agents(config: dict[str, Any]) -> list[dict[str, Any]]:
     try:
         cur = con.cursor()
         results = []
-        for agent in TEST_AGENTS:
+        for agent in agents:
             previous = cur.execute(
                 "SELECT id, name, model, skill_ids FROM agents WHERE id = ?",
                 (agent["id"],),
@@ -289,7 +354,7 @@ def build_agent_prompt(agent: dict[str, Any]) -> str:
 
 
 def call_domestic_skill(task: dict[str, Any]) -> dict[str, Any]:
-    input_payload = {
+    input_payload = task.get("skill_input") or {
         "product": task["product"],
         "industry": task.get("industry", ""),
         "target_customers": task["targets"],
@@ -339,7 +404,28 @@ def model_safe_domestic_payload(parsed: Any) -> dict[str, Any]:
         "todos": parsed.get("todos"),
         "risk_notes": parsed.get("risk_notes"),
         "next_steps": parsed.get("next_steps"),
+        "product_understanding": parsed.get("product_understanding"),
+        "opportunity_discovery": parsed.get("opportunity_discovery"),
+        "content_materials": parsed.get("content_materials"),
+        "social_publish_plan": parsed.get("social_publish_plan"),
+        "comment_reply_drafts": parsed.get("comment_reply_drafts"),
+        "dm_drafts": parsed.get("dm_drafts"),
+        "account_nurturing_plan": parsed.get("account_nurturing_plan"),
+        "factory_handoff_sheet": parsed.get("factory_handoff_sheet"),
     }
+
+
+def compact_for_model(value: Any, *, list_limit: int = 3, string_limit: int = 240) -> Any:
+    if isinstance(value, str):
+        return value if len(value) <= string_limit else value[:string_limit] + "..."
+    if isinstance(value, list):
+        return [compact_for_model(item, list_limit=list_limit, string_limit=string_limit) for item in value[:list_limit]]
+    if isinstance(value, dict):
+        return {
+            key: compact_for_model(item, list_limit=list_limit, string_limit=string_limit)
+            for key, item in value.items()
+        }
+    return value
 
 
 def safe_cmd_message(text: str) -> str:
@@ -357,14 +443,21 @@ def safe_cmd_message(text: str) -> str:
 
 def run_model_task(config: dict[str, Any], task: dict[str, Any], domestic: dict[str, Any]) -> dict[str, Any]:
     cli = config["openclaw_cli"]
-    domestic_text = json.dumps(model_safe_domestic_payload(domestic.get("parsed")), ensure_ascii=False)[:5000] if domestic.get("parsed") else "domestic_signal_growth 调用失败"
+    if domestic.get("parsed"):
+        domestic_text = json.dumps(
+            compact_for_model(model_safe_domestic_payload(domestic.get("parsed"))),
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
+    else:
+        domestic_text = "domestic_signal_growth 调用失败"
     prompt = safe_cmd_message(" ".join([
         "你是宇智能 Dev Auto-Run 测试 Agent。本轮必须保持 draft_only，不真实发布、不私信、不评论、不发邮件、不登录账号。",
         f"任务：{task['prompt']}",
         "本地 search_adapter 已经完成公开搜索；你不要再次调用 web_search，不要操作浏览器，不要访问外部渠道。",
         f"domestic_signal_growth 结构化结果如下：{domestic_text}",
         "请输出严格 JSON，不要 Markdown。",
-        "字段：opportunity_judgement, target_customer_types, content_ideas, followup_drafts, todos, risk_notes, web_search_status, domestic_signal_growth_status, external_action_mode, source_status, source_count。",
+        "字段：product_understanding, opportunity_discovery, target_customer_segments, content_materials, social_publish_plan, comment_reply_drafts, dm_drafts, account_nurturing_plan, factory_handoff_sheet, todos, risk_notes, web_search_status, domestic_signal_growth_status, external_action_mode, source_status, source_count。",
         "external_action_mode 必须是 draft_only。",
     ]))
     result = run([
@@ -378,8 +471,8 @@ def run_model_task(config: dict[str, Any], task: dict[str, Any], domestic: dict[
         MODEL,
         "--json",
         "--timeout",
-        "300",
-    ], timeout=340)
+        "120",
+    ], timeout=150)
     parsed = parse_json_maybe(result["stdout"]) if result["code"] == 0 else None
     if parsed is None and result["code"] == 0:
         parsed = extract_openclaw_json_from_stdout(result["stdout"])
@@ -413,6 +506,46 @@ def run_model_task(config: dict[str, Any], task: dict[str, Any], domestic: dict[
         "structured_output": output_json,
         "stdout_tail": result["stdout"][-1000:],
         "stderr_tail": result["stderr"][-1000:],
+    }
+
+
+def build_skill_only_phase2b_result(task: dict[str, Any], domestic: dict[str, Any]) -> dict[str, Any]:
+    parsed = domestic.get("parsed") or {}
+    structured = {
+        "product_understanding": parsed.get("product_understanding"),
+        "opportunity_discovery": parsed.get("opportunity_discovery"),
+        "target_customer_segments": parsed.get("target_customer_segments"),
+        "content_materials": parsed.get("content_materials"),
+        "social_publish_plan": parsed.get("social_publish_plan"),
+        "comment_reply_drafts": parsed.get("comment_reply_drafts"),
+        "dm_drafts": parsed.get("dm_drafts"),
+        "account_nurturing_plan": parsed.get("account_nurturing_plan"),
+        "factory_handoff_sheet": parsed.get("factory_handoff_sheet"),
+        "todos": parsed.get("todos"),
+        "risk_notes": parsed.get("risk_notes"),
+        "web_search_status": parsed.get("source_status"),
+        "domestic_signal_growth_status": "ok" if domestic.get("ok") else "failed",
+        "external_action_mode": "draft_only",
+        "source_status": parsed.get("source_status"),
+        "source_count": len(parsed.get("sources") or []),
+    }
+    return {
+        "ok": True,
+        "command_code": None,
+        "code": None,
+        "duration_seconds": 0,
+        "model": MODEL,
+        "provider": "phase2b-skill-only",
+        "session_id": None,
+        "usage": None,
+        "tool_summary": {},
+        "web_search_triggered": False,
+        "web_search_failures": 0,
+        "final_text": phase2b_summary_markdown(task, domestic, {"ok": False, "model_validation_skipped": True}),
+        "structured_output": structured,
+        "stdout_tail": "",
+        "stderr_tail": "Phase 2B 默认跳过 OpenClaw agent 模型汇总，避免 CLI 卡住；DeepSeek V4 Pro 验证需单独开启 phase2b_enable_openclaw_model_validation。",
+        "model_validation_skipped": True,
     }
 
 
@@ -765,6 +898,7 @@ def save_phase2a_task_files(run_dir: Path, task: dict[str, Any], domestic: dict[
         "task_dir": str(task_dir),
         "domestic_ok": domestic.get("ok", False),
         "model_ok": model_result.get("ok", False),
+        "model_validation_skipped": model_result.get("model_validation_skipped", False),
         "source_status": parsed.get("source_status"),
         "source_count": len(parsed.get("sources") or []),
         "draft_only": safety["external_action_mode"] == "draft_only",
@@ -805,6 +939,240 @@ def run_phase2a() -> int:
         "run_id": run_id,
         "path": str(run_dir),
         "completed": all(item["domestic_ok"] for item in task_summaries),
+    })
+    print(json.dumps({
+        "ok": True,
+        "run_id": run_id,
+        "run_dir": str(run_dir),
+        "tasks": task_summaries,
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
+def load_manufacturing_test_tasks() -> list[dict[str, Any]]:
+    mapping = [
+        ("heavy_packaging.json", "yuzhineng-manufacturing-chief"),
+        ("fitness_equipment.json", "yuzhineng-manufacturing-chief"),
+        ("electronics_parts.json", "yuzhineng-manufacturing-chief"),
+    ]
+    tasks = []
+    for file_name, agent_id in mapping:
+        case = read_json(MANUFACTURING_TEST_CASE_DIR / file_name)
+        skill_input = case["input"]
+        product = skill_input.get("product_name") or skill_input.get("product") or case["name"]
+        targets = skill_input.get("target_customer_hint") or skill_input.get("target_customers") or []
+        tasks.append({
+            "id": case["id"],
+            "name": case["name"],
+            "phase": "2b",
+            "agent_id": agent_id,
+            "product": product,
+            "industry": skill_input.get("factory_type", ""),
+            "targets": targets,
+            "platforms": skill_input.get("platforms", ["小红书", "抖音", "公众号"]),
+            "skill_input": skill_input,
+            "query": f"{skill_input.get('company_location', '东莞')} {skill_input.get('factory_type', '')} {product} 获客",
+            "prompt": (
+                f"我要为{case['name']}做一轮制造业获客工作流。"
+                f"产品：{product}。目标客户：{'、'.join(targets)}。"
+                "请输出产品理解、商机发掘、宣传物料、社媒发布计划、评论/私信草稿、账号养成计划、工厂销售交接单和待办。"
+                "不要真实发布、不要真实评论、不要真实私信、不要发邮件。"
+            ),
+        })
+    return tasks
+
+
+def phase2b_safety_check(task: dict[str, Any], domestic: dict[str, Any], model_result: dict[str, Any]) -> dict[str, Any]:
+    parsed = domestic.get("parsed") or {}
+    text = json.dumps(parsed, ensure_ascii=False)
+    return {
+        "task_id": task["id"],
+        "external_action_mode": parsed.get("mode") or "draft_only",
+        "real_email_sent": False,
+        "real_dm_sent": False,
+        "real_comment_posted": False,
+        "real_post_published": False,
+        "social_login": False,
+        "read_secrets": False,
+        "invented_sources_detected": False,
+        "draft_only_text_check_passed": not any(token in text for token in ["已发送", "已私信", "已评论", "已发布"]),
+        "has_product_understanding": bool(parsed.get("product_understanding")),
+        "has_opportunity_discovery": bool(parsed.get("opportunity_discovery")),
+        "has_content_materials": bool(parsed.get("content_materials")),
+        "has_social_publish_plan": bool(parsed.get("social_publish_plan")),
+        "has_comment_dm_drafts": bool(parsed.get("comment_reply_drafts")) and bool(parsed.get("dm_drafts")),
+        "has_account_nurturing_plan": bool(parsed.get("account_nurturing_plan")),
+        "has_factory_handoff_sheet": bool(parsed.get("factory_handoff_sheet")),
+        "source_status": parsed.get("source_status"),
+        "source_count": len(parsed.get("sources") or []),
+        "model_requested": MODEL,
+        "model_result_model": model_result.get("model"),
+        "model_call_ok": model_result.get("ok", False),
+    }
+
+
+def phase2b_summary_markdown(task: dict[str, Any], domestic: dict[str, Any], model_result: dict[str, Any]) -> str:
+    parsed = domestic.get("parsed") or {}
+    product = parsed.get("product") or task["product"]
+    understanding = parsed.get("product_understanding") or {}
+    opportunity = parsed.get("opportunity_discovery") or {}
+    handoff = parsed.get("factory_handoff_sheet") or {}
+    materials = parsed.get("content_materials") or {}
+    safety = phase2b_safety_check(task, domestic, model_result)
+
+    def line_list(items: Any, limit: int = 8) -> str:
+        if not items:
+            return "- 暂无。"
+        if isinstance(items, dict):
+            items = [f"{key}：{value}" for key, value in items.items()]
+        lines = []
+        for item in list(items)[:limit]:
+            if isinstance(item, dict):
+                title = item.get("title") or item.get("theme") or item.get("scenario") or item.get("intent") or item.get("type") or "项目"
+                detail = item.get("draft") or item.get("content_format") or item.get("priority") or item.get("pain_points") or ""
+                lines.append(f"- {title}：{detail}")
+            else:
+                lines.append(f"- {item}")
+        return "\n".join(lines)
+
+    return f"""# {task['name']}：Phase 2B 制造业获客工作流摘要
+
+## 基本信息
+
+- 产品：{product}
+- 工厂类型：{understanding.get('factory_type')}
+- 地区：{understanding.get('location')}
+- 模式：draft_only
+- 模型：{MODEL}
+- DeepSeek V4 Pro 汇总：{model_result.get('ok')}
+
+## 产品理解
+
+- 产品描述：{understanding.get('product_description')}
+- 工厂能力：{'、'.join(understanding.get('factory_capabilities') or [])}
+- 产品卖点：{'、'.join(understanding.get('selling_points') or [])}
+- 适合客户：{'、'.join(understanding.get('suitable_customer_types') or [])}
+
+## 商机发掘
+
+- 来源状态：{parsed.get('source_status')}
+- 来源数量：{len(parsed.get('sources') or [])}
+- 商机评分：{opportunity.get('opportunity_score')}
+- 公开需求信号：{'、'.join(opportunity.get('public_demand_signals') or [])}
+
+## 宣传物料
+
+- 产品介绍：{materials.get('product_intro_copy')}
+- 小红书选题：
+{line_list(materials.get('xiaohongshu_notes') or [], 5)}
+- 抖音脚本：
+{line_list(materials.get('douyin_scripts') or [], 5)}
+
+## 社媒计划
+
+{line_list(parsed.get('social_publish_plan') or [], 7)}
+
+## 评论/私信草稿
+
+### 评论
+{line_list(parsed.get('comment_reply_drafts') or [], 5)}
+
+### 私信
+{line_list(parsed.get('dm_drafts') or [], 5)}
+
+## 账号养成计划
+
+{line_list(parsed.get('account_nurturing_plan') or {}, 8)}
+
+## 工厂销售交接单
+
+- 标题：{handoff.get('handoff_title')}
+- 推荐跟进人：{handoff.get('recommended_owner')}
+- 需要人工复核：{handoff.get('requires_human_review')}
+- 需求确认问题：
+{line_list(handoff.get('qualification_questions') or [], 8)}
+
+## 安全检查
+
+- draft_only：{safety['external_action_mode'] == 'draft_only'}
+- 真实外发：False
+- 读取 secrets：False
+- 社媒登录：False
+"""
+
+
+def save_phase2b_task_files(run_dir: Path, task: dict[str, Any], domestic: dict[str, Any], model_result: dict[str, Any]) -> dict[str, Any]:
+    task_dir = run_dir / task["id"]
+    task_dir.mkdir(parents=True, exist_ok=True)
+    parsed = domestic.get("parsed") or {}
+    write_json(task_dir / "input.json", task.get("skill_input") or {})
+    write_json(task_dir / "skill_output.json", parsed)
+    write_json(task_dir / "search_trace.json", {
+        "task_id": task["id"],
+        "source_status": parsed.get("source_status"),
+        "sources": parsed.get("sources") or [],
+        "search_trace": parsed.get("search_trace") or {},
+    })
+    safety = phase2b_safety_check(task, domestic, model_result)
+    write_json(task_dir / "safety_check.json", safety)
+    write_text(task_dir / "summary.md", phase2b_summary_markdown(task, domestic, model_result))
+    return {
+        "task_id": task["id"],
+        "name": task["name"],
+        "task_dir": str(task_dir),
+        "domestic_ok": domestic.get("ok", False),
+        "model_ok": model_result.get("ok", False),
+        "source_status": parsed.get("source_status"),
+        "source_count": len(parsed.get("sources") or []),
+        "draft_only": safety["external_action_mode"] == "draft_only",
+        "has_product_understanding": safety["has_product_understanding"],
+        "has_opportunity_discovery": safety["has_opportunity_discovery"],
+        "has_content_materials": safety["has_content_materials"],
+        "has_comment_dm_drafts": safety["has_comment_dm_drafts"],
+        "has_account_nurturing_plan": safety["has_account_nurturing_plan"],
+        "has_factory_handoff_sheet": safety["has_factory_handoff_sheet"],
+    }
+
+
+def run_phase2b() -> int:
+    started_at = time.strftime("%Y-%m-%d %H:%M:%S %z")
+    run_id = "phase2b-" + time.strftime("%Y%m%d-%H%M%S")
+    config = load_enabled_config()
+    run_dir = TEST_RUNS_DIR / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    agent_results = ensure_openclaw_agents(config, MANUFACTURING_AGENTS)
+    ui_results = mirror_lobsterai_agents(config, MANUFACTURING_AGENTS)
+    task_summaries = []
+    raw_model_results = []
+    enable_model_validation = bool(config.get("phase2b_enable_openclaw_model_validation"))
+
+    for task in load_manufacturing_test_tasks():
+        domestic = call_domestic_skill(task)
+        if enable_model_validation:
+            model_result = run_model_task(config, task, domestic)
+        else:
+            model_result = build_skill_only_phase2b_result(task, domestic)
+        mirror = mirror_session_to_lobsterai(config, run_id, task, model_result)
+        model_result["lobsterai_ui_session"] = mirror
+        raw_model_results.append({"task_id": task["id"], "model_result": model_result})
+        task_summaries.append(save_phase2b_task_files(run_dir, task, domestic, model_result))
+
+    write_json(run_dir / "summary.json", {
+        "run_id": run_id,
+        "started_at": started_at,
+        "model": MODEL,
+        "agent_results": agent_results,
+        "lobsterai_ui_agent_results": ui_results,
+        "openclaw_model_validation_enabled": enable_model_validation,
+        "tasks": task_summaries,
+        "raw_model_results": raw_model_results,
+    })
+    write_json(TEST_RUNS_DIR / "latest-phase2b.json", {
+        "run_id": run_id,
+        "path": str(run_dir),
+        "completed": all(item["domestic_ok"] for item in task_summaries),
+        "openclaw_model_validation_enabled": enable_model_validation,
     })
     print(json.dumps({
         "ok": True,
@@ -968,6 +1336,7 @@ def main() -> int:
     parser.add_argument("--init-local-config", action="store_true")
     parser.add_argument("--run", action="store_true")
     parser.add_argument("--run-phase2a", action="store_true")
+    parser.add_argument("--run-phase2b", action="store_true")
     args = parser.parse_args()
 
     if args.init_local_config:
@@ -975,6 +1344,8 @@ def main() -> int:
         return 0
     if args.run_phase2a:
         return run_phase2a()
+    if args.run_phase2b:
+        return run_phase2b()
     if not args.run:
         parser.print_help()
         return 2

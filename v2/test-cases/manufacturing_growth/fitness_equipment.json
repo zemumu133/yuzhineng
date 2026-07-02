@@ -1,0 +1,16 @@
+{
+  "id": "manufacturing-002-fitness-equipment",
+  "name": "东莞健身器材厂",
+  "input": {
+    "company_location": "东莞",
+    "factory_type": "健身器材厂",
+    "product_name": "哑铃、力量训练器材、家用健身器材",
+    "product_description": "面向健身房、经销商、跨境卖家和团购客户的力量训练及家用健身器材。",
+    "factory_capabilities": ["哑铃生产", "力量训练器材", "OEM/ODM", "跨境包装"],
+    "target_customer_hint": ["健身房", "经销商", "跨境卖家", "团购客户"],
+    "platforms": ["小红书", "抖音", "公众号"],
+    "mode": "draft_only",
+    "search_required": true
+  },
+  "expected_outputs": ["产品卖点", "目标客户", "商机判断", "宣传物料", "评论/私信草稿", "账号养成计划", "工厂销售交接单"]
+}
