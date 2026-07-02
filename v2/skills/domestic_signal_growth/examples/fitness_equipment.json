@@ -1,0 +1,9 @@
+{
+  "product": "健身器材",
+  "industry": "健身器材 / 商贸",
+  "target_customers": ["健身房", "经销商", "跨境卖家"],
+  "city": "全国",
+  "platforms": ["小红书", "抖音", "公众号"],
+  "mode": "draft_only",
+  "search_required": true
+}

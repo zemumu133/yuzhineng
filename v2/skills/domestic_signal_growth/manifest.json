@@ -1,0 +1,51 @@
+{
+  "id": "domestic_signal_growth",
+  "name": "国内营销信号穿透",
+  "version": "0.2.0-mvp",
+  "description": "面向国内中小企业的公开信息研究、商机判断、内容建议、跟进草稿和人工待办生成 Skill。",
+  "entry": "domestic_signal_growth.ps1",
+  "runtime": "powershell",
+  "mode": "draft_only",
+  "inputs": {
+    "product": "产品或服务名称",
+    "industry": "行业",
+    "target_customers": ["目标客户类型"],
+    "city": "城市或区域",
+    "platforms": ["小红书", "抖音", "公众号"],
+    "mode": "draft_only",
+    "search_required": true
+  },
+  "outputs": [
+    "source_status",
+    "sources",
+    "opportunity_judgement",
+    "target_customer_types",
+    "platform_strategy",
+    "followup_drafts",
+    "todos",
+    "risk_notes",
+    "next_steps"
+  ],
+  "safety": {
+    "external_action_mode": "draft_only",
+    "forbidden": [
+      "email.send",
+      "dm.send",
+      "comment.post",
+      "post.publish",
+      "social.login",
+      "read.secrets",
+      "invent.sources",
+      "invent.contacts"
+    ]
+  },
+  "providers": {
+    "search": [
+      "existing_lobster_web_search",
+      "browser_public_search",
+      "manual_seed_urls",
+      "no_source_available"
+    ],
+    "searxng_placeholder": "http://127.0.0.1:8080"
+  }
+}

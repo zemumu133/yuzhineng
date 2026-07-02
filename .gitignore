@@ -38,6 +38,8 @@ build/
 .vite/
 .next/
 coverage/
+__pycache__/
+*.pyc
 
 # Archives and temporary files
 *.log
