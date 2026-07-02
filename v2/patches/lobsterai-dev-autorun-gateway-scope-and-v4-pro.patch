@@ -1,0 +1,54 @@
+Patch: LobsterAI local DevAutoRun gateway scope and DeepSeek V4 Pro routing
+Date: 2026-07-02
+Scope: local ignored upstream source under D:\OpenClaw\v2\client-shell\lobsterai\src
+
+This patch note records the local source changes applied for the YuZhiNeng
+Phase 1A DevAutoRun/UI reliability fix. The LobsterAI source tree is ignored by
+the parent D:\OpenClaw repository, so this tracked note preserves the change
+intent for future migration or re-application.
+
+Changed file:
+D:\OpenClaw\v2\client-shell\lobsterai\src\src\main\libs\agentEngine\openclawRuntimeAdapter.ts
+
+Summary:
+- Added `isGatewayMissingScope(error, scope)` helper.
+- `sessions.patch` missing `operator.admin` no longer blocks `chat.send`.
+- Gateway client now explicitly requests `operator.write` and disables device
+  pairing with `deviceIdentity: null`.
+- This avoids the previous implicit `operator.admin` + pairing flow that caused
+  `OpenClaw gateway client connect timeout after 60000ms` in the desktop UI.
+
+Key local source intent:
+```
+scopes: ['operator.write'],
+deviceIdentity: null,
+```
+
+Changed file:
+D:\OpenClaw\v2\client-shell\lobsterai\src\src\renderer\store\slices\modelSlice.ts
+
+Summary:
+- Added DeepSeek runtime model normalization for ordinary Agent/Cowork runs.
+- Legacy or fast DeepSeek selections are normalized to `deepseek-v4-pro`.
+- Affected legacy/fast IDs:
+  - `deepseek-chat`
+  - `deepseek-reasoner`
+  - `deepseek-v4-flash`
+
+Changed files:
+D:\OpenClaw\v2\client-shell\lobsterai\src\src\renderer\config.ts
+D:\OpenClaw\v2\client-shell\lobsterai\src\src\shared\providers\constants.ts
+D:\OpenClaw\v2\client-shell\lobsterai\src\src\renderer\services\config.ts
+
+Summary:
+- DeepSeek V4 Pro is the default app model.
+- DeepSeek provider model order now prefers V4 Pro before V4 Flash.
+- V4 Flash remains available for future low-level classification, but normal UI
+  Agent execution is routed through V4 Pro.
+
+Security notes:
+- No API key, token, cookie, browser profile, database, log, or build artifact
+  is included in this patch note.
+- The desktop gateway client does not request global `operator.admin`.
+- Real external actions remain disabled by prompt and product policy; this patch
+  only fixes local UI task submission and model routing.

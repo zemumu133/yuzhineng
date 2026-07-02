@@ -1,225 +1,116 @@
-# Phase 1A-DevAutoRunGate：开发测试自动权限与多 Agent 任务验证
+# Phase 1A-DevAutoRunGate：UI 真实鼠标验证与 Gateway 修复报告
 
-## 1. 测试日期
+测试日期：2026-07-02
 
-- 测试时间：2026-07-01 18:19:19 +0800
-- Run ID：20260701-181919
+## 1. 本轮目标
 
-## 2. 当前 LobsterAI commit
+修复用户在 LobsterAI 桌面端随机选择 Agent 后出现的不可用问题，并使用真实 UI 鼠标路径验证：
 
-- 当前工作区基线来自上一阶段 commit：5348d6a9a75b002a95e1545fd5ca1571f03eb16b
-- 本阶段未提交 LobsterAI 上游源码目录，避免把 PoC 外部源码纳入 v2 基线。
+- 不通过 CLI 代发 Cowork。
+- 不绕过 OpenClaw 权限门禁。
+- 不申请全局 `operator.admin`。
+- 普通 Agent 对话使用 `deepseek/deepseek-v4-pro`。
+- 不真实发送邮件、私信、评论、发帖。
 
-## 3. Dev Auto-Run 是否实现
+## 2. 根因
 
-- 已实现本地开发测试通道：`v2/scripts/dev-autorun-gate.py` 与 `v2/scripts/dev-autorun-gate.ps1`。
-- 默认关闭；只有 `YUZHINENG_DEV_AUTO_RUN=1` 且本地 `v2/dev-config/dev-auto-run.json` 中 `enabled=true` 时运行。
-- 真实本地配置 `dev-auto-run.json` 已加入 `.gitignore`，仓库只提交 `.example`。
+发现两个主要问题：
 
-## 4. 是否有 UI 审批入口
+1. GatewayClient 未显式声明 scope 时会落到 `operator.admin` + device pairing 默认路径，桌面端无法稳定展示该配对/提权流程，导致 UI 中出现 `OpenClaw gateway client connect timeout after 60000ms`。
+2. 部分 Agent 保留了旧模型选择，UI 会显示或实际使用 DeepSeek V4 Flash，导致“主模型是 V4 Pro”的体验不一致。
 
-- 本阶段未实现正式 UI 审批入口。
-- 继续保留上一阶段判断：Cowork 普通 UI 仍缺少 `operator.admin/operator.write` scope upgrade 的可见批准入口。
+## 3. 修改文件
 
-## 5. allowed_scopes
+已实际修改但位于被主仓库忽略的 LobsterAI 上游源码目录：
 
-```json
-[
-  "cowork.session.create",
-  "cowork.session.send",
-  "agent.test.create",
-  "agent.test.update",
-  "agent.test.delete",
-  "task.test.create",
-  "task.test.update",
-  "skill.domestic_signal_growth.call",
-  "tool.web_search.public",
-  "tool.document.local",
-  "write.v2.reports",
-  "write.v2.data.test_runs",
-  "read.v2.docs",
-  "read.v2.skills"
-]
-```
+- `D:\OpenClaw\v2\client-shell\lobsterai\src\src\main\libs\agentEngine\openclawRuntimeAdapter.ts`
+- `D:\OpenClaw\v2\client-shell\lobsterai\src\src\renderer\store\slices\modelSlice.ts`
+- `D:\OpenClaw\v2\client-shell\lobsterai\src\src\renderer\config.ts`
+- `D:\OpenClaw\v2\client-shell\lobsterai\src\src\shared\providers\constants.ts`
+- `D:\OpenClaw\v2\client-shell\lobsterai\src\src\renderer\services\config.ts`
 
-## 6. denied_scopes
+主仓库已跟踪文件：
 
-```json
-[
-  "read.secrets",
-  "read.api_keys",
-  "read.tokens",
-  "read.cookies",
-  "read.browser_profiles",
-  "social.login",
-  "email.send",
-  "dm.send",
-  "comment.post",
-  "post.publish",
-  "official.bundle.install",
-  "official.update.download",
-  "payment.call",
-  "ads.call",
-  "customer_data.bulk_export",
-  "system.path.modify",
-  "system.install.large",
-  "legacy_console.modify",
-  "operator.admin.global_allow"
-]
-```
+- `D:\OpenClaw\v2\scripts\start-yuzhineng.ps1`
+- `D:\OpenClaw\v2\patches\lobsterai-dev-autorun-gateway-scope-and-v4-pro.patch`
+- `D:\OpenClaw\v2\reports\LOBSTERAI_DEV_AUTORUN_GATE_REPORT_CN.md`
 
-## 7. 是否默认关闭
+## 4. 修复内容
 
-- 是。example 中 `enabled=false`，脚本还要求环境变量 `YUZHINENG_DEV_AUTO_RUN=1`。
+Gateway 修复：
 
-## 8. 如何开启
+- 显式使用 `operator.write`。
+- 显式设置 `deviceIdentity: null`。
+- 阻止 GatewayClient 走隐式 `operator.admin` 配对路径。
+- `sessions.patch` 因缺少 `operator.admin` 失败时不再阻塞 `chat.send`。
 
-```powershell
-D:\OpenClaw\v2\scripts\dev-autorun-gate.ps1 -InitLocalConfig
-D:\OpenClaw\v2\scripts\dev-autorun-gate.ps1 -Run
-```
+模型修复：
 
-## 9. 如何关闭
+- DeepSeek 默认模型改为 `deepseek-v4-pro`。
+- Provider 列表优先显示 V4 Pro。
+- 对普通 Agent/Cowork 路径中的旧模型做兜底迁移：
+  - `deepseek-chat`
+  - `deepseek-reasoner`
+  - `deepseek-v4-flash`
 
-- 删除或禁用 `D:\OpenClaw\v2\dev-config\dev-auto-run.json`。
-- 取消环境变量 `YUZHINENG_DEV_AUTO_RUN`。
+启动修复：
 
-## 10. 是否使用 deepseek/deepseek-v4-pro
+- “宇智能”桌面快捷方式仍指向 `D:\OpenClaw\v2\scripts\start-yuzhineng.ps1`。
+- 启动脚本已改为 `npm run electron:dev:openclaw`。
+- 启动时临时加入 PortableGit、Git、runtime shims 和 `OPENCLAW_SRC`，不修改系统 PATH。
 
-- 三轮任务实际模型均为 V4 Pro：True
+## 5. 验证结果
 
-## 11. 三个测试 Agent 创建结果
+命令验证：
 
-```json
-[
-  {
-    "agent_id": "yuzhineng-lead-agent",
-    "name": "宇智能获客 Agent",
-    "openclaw_created": false,
-    "openclaw_already_existed": true,
-    "openclaw_add_code": null,
-    "identity_code": 0,
-    "workspace": "D:\\OpenClaw\\v2\\data\\test-runs\\workspaces\\yuzhineng-lead-agent",
-    "agent_dir": "D:\\OpenClaw\\v2\\data\\test-runs\\openclaw-agents\\yuzhineng-lead-agent"
-  },
-  {
-    "agent_id": "yuzhineng-content-agent",
-    "name": "宇智能内容 Agent",
-    "openclaw_created": false,
-    "openclaw_already_existed": true,
-    "openclaw_add_code": null,
-    "identity_code": 0,
-    "workspace": "D:\\OpenClaw\\v2\\data\\test-runs\\workspaces\\yuzhineng-content-agent",
-    "agent_dir": "D:\\OpenClaw\\v2\\data\\test-runs\\openclaw-agents\\yuzhineng-content-agent"
-  },
-  {
-    "agent_id": "yuzhineng-sales-agent",
-    "name": "宇智能销售 Agent",
-    "openclaw_created": false,
-    "openclaw_already_existed": true,
-    "openclaw_add_code": null,
-    "identity_code": 0,
-    "workspace": "D:\\OpenClaw\\v2\\data\\test-runs\\workspaces\\yuzhineng-sales-agent",
-    "agent_dir": "D:\\OpenClaw\\v2\\data\\test-runs\\openclaw-agents\\yuzhineng-sales-agent"
-  }
-]
-```
+- `npm run compile:electron`：通过。
+- `npx tsc --noEmit`：通过。
+- `npm run electron:dev:openclaw`：启动到 Electron UI，Gateway ready。
 
-## 12. LobsterAI UI Agent 镜像结果
+真实鼠标 UI 验证：
 
-```json
-[
-  {
-    "agent_id": "yuzhineng-lead-agent",
-    "name": "宇智能获客 Agent",
-    "lobsterai_ui_mirrored": true,
-    "previous_row_existed": true
-  },
-  {
-    "agent_id": "yuzhineng-content-agent",
-    "name": "宇智能内容 Agent",
-    "lobsterai_ui_mirrored": true,
-    "previous_row_existed": true
-  },
-  {
-    "agent_id": "yuzhineng-sales-agent",
-    "name": "宇智能销售 Agent",
-    "lobsterai_ui_mirrored": true,
-    "previous_row_existed": true
-  }
-]
-```
+- 使用 Windows 原生鼠标/键盘自动化点击 LobsterAI 窗口。
+- 选择非主 Agent：`宇智能获客 Agent`。
+- 点击输入框，粘贴测试任务。
+- 用鼠标点击发送按钮。
+- UI 进入执行中状态。
+- UI 最终返回：`宇智能获客 Agent 可以正常工作`。
 
-## 13. 三个测试任务创建结果
+截图证据：
 
-### task-001-certificate
+- `D:\OpenClaw\v2\reports\assets\lobsterai\ui-real-random-agent-ready-to-click-send.png`
+- `D:\OpenClaw\v2\reports\assets\lobsterai\ui-real-random-agent-click-send.png`
+- `D:\OpenClaw\v2\reports\assets\lobsterai\ui-real-random-agent-after-click-send-90s.png`
 
-- 完成：True
-- OpenClaw session：5b41fea7-9237-4000-994f-90d9782858df
-- LobsterAI UI session：{'ok': True, 'session_id': 'dev-autorun-20260701-181919-task-001-certificate'}
-- 摘要：职业证书考评服务 对 培训机构、人力资源公司 有明确的内容获客机会，适合先用公开信息研究、痛点内容和人工审批触达验证需求。
-- 质量提醒：web-search 已触发但 provider 不可用，本轮没有真实公开来源。
+日志证据摘要（已脱敏）：
 
-### task-002-carton
+- UI 创建 session 使用：`deepseek/deepseek-v4-pro`
+- GatewayClient handshake succeeded
+- `chat.send` acknowledged
+- Agent run provider：`deepseek`
+- Agent run model：`deepseek-v4-pro`
+- Provider fetch status：`200`
+- 最终消息 metadata model：`deepseek-v4-pro`
 
-- 完成：True
-- OpenClaw session：31a22628-fa23-4d3f-b6a1-bd23ce21fac1
-- LobsterAI UI session：{'ok': True, 'session_id': 'dev-autorun-20260701-181919-task-002-carton'}
-- 摘要：web_search 不可用，按规则输出。注意：domestic_signal_growth 返回的内容与"重型包装纸箱"主题存在偏差（结果偏向职业证书领域），已如实保留原始数据并在输出中标注。
-- 质量提醒：结构化 JSON 未成功解析，已保留原始轨迹，后续需强化 JSON 输出约束。；web-search 已触发但 provider 不可用，本轮没有真实公开来源。
+## 6. 已知限制
 
-### task-003-fitness
+1. `sessions.patch` 仍需要 `operator.admin`，当前策略是非 admin 客户端跳过该同步步骤，让 Gateway 使用已配置的 V4 Pro 模型。这是刻意保守处理，不申请全局 admin。
+2. 可选插件 `moltbot-popo` 仍可能因上游网络 `ECONNRESET` 被跳过，不影响本轮 Cowork/Agent 基础对话。
+3. 开发模式仍提示 bundled Python runtime 缺失，后续打包阶段需要单独处理。
+4. 截图文件仅作为本机验证证据，当前未加入 Git。
+5. LobsterAI 上游源码目录被主仓库忽略，真实源码改动已用 patch note 记录，后续进入正式 fork 或补丁管理时需要固化。
 
-- 完成：True
-- OpenClaw session：bee7a7a5-73f1-445d-9391-893fb9426cbd
-- LobsterAI UI session：{'ok': True, 'session_id': 'dev-autorun-20260701-181919-task-003-fitness'}
-- 摘要：健身器材外贸/内贸产品 对 健身房、经销商、跨境卖家 有明确的内容获客机会，适合先用公开信息研究、痛点内容和人工审批触达验证需求。
-- 质量提醒：web-search 已触发但 provider 不可用，本轮没有真实公开来源。
+## 7. 安全检查
 
-## 14. web-search 调用结果
-
-- 是否触发：True
-- 失败数合计：3
-- 说明：本轮 OpenClaw agent 能触发 `web_search` 工具，但当前 provider 未配置或不可用时，模型会返回失败状态并继续生成 draft_only 结果。
-
-## 15. domestic_signal_growth 调用结果
-
-- 三轮本地 Skill 均已调用：True
-
-## 16. 最小业务结果摘要
-
-- task-001-certificate：职业证书考评服务 对 培训机构、人力资源公司 有明确的内容获客机会，适合先用公开信息研究、痛点内容和人工审批触达验证需求。
-  质量提醒：web-search 已触发但 provider 不可用，本轮没有真实公开来源。
-- task-002-carton：web_search 不可用，按规则输出。注意：domestic_signal_growth 返回的内容与"重型包装纸箱"主题存在偏差（结果偏向职业证书领域），已如实保留原始数据并在输出中标注。
-  质量提醒：结构化 JSON 未成功解析，已保留原始轨迹，后续需强化 JSON 输出约束。；web-search 已触发但 provider 不可用，本轮没有真实公开来源。
-- task-003-fitness：健身器材外贸/内贸产品 对 健身房、经销商、跨境卖家 有明确的内容获客机会，适合先用公开信息研究、痛点内容和人工审批触达验证需求。
-  质量提醒：web-search 已触发但 provider 不可用，本轮没有真实公开来源。
-
-## 17. 安全检查结果
-
-- 未读取 `D:\OpenClaw\secrets`。
+- 未读取或提交 secrets 文件。
 - 未提交 API Key、Token、Cookie、浏览器 Profile。
-- 未真实发送邮件、私信、评论或发帖。
-- 未登录社媒账号。
-- 未下载官方更新包。
-- 未全局关闭权限检查。
-- Dev Auto-Run 仅由本地环境变量和本地配置显式开启。
+- 未提交数据库、日志、缓存、node_modules、构建产物。
+- 未执行真实外部发送。
+- 未连接真实社媒账号。
+- 未绕过验证码、登录墙或平台限制。
 
-## 18. 是否建议进入 Phase 2
+## 8. 结论
 
-- 结论：B：部分成立，先修复具体阻塞点
-- 建议：先修复 web-search provider 配置和 Cowork UI scope approval，再进入完整 Phase 2。
+结论：B+，UI 端到端基础 Agent 对话已经恢复，且真实鼠标路径验证通过。
 
-## 19. 下一步建议
-
-1. 给 Cowork 的 `operator.admin/operator.write` scope upgrade 增加可见审批入口，或把开发测试 runner 与普通 UI runner 分离。
-2. 配置 OpenClaw web_search provider，使公开搜索不再失败。
-3. 把 `domestic_signal_growth` 从占位 PowerShell Skill 升级为可被 Cowork/OpenClaw 原生发现的 Skill 或 MCP 工具。
-4. 修复 UI 会话模型默认值，深度任务默认使用 `deepseek/deepseek-v4-pro`。
-
-## 20. 回滚方式
-
-- 删除 `D:\OpenClaw\v2\dev-config\dev-auto-run.json`。
-- 删除 `D:\OpenClaw\v2\data\test-runs\` 下本轮测试目录。
-- 在 LobsterAI UI 中删除 ID 前缀为 `yuzhineng-` 的测试 Agent/会话，或使用后续清理脚本。
-- 回退本阶段 Git commit。
+当前可以继续使用 LobsterAI + OpenClaw + DeepSeek V4 Pro 做下一步业务能力验证。下一阶段建议把 `domestic_signal_growth` 做成正式可被 Cowork 稳定识别的 Skill/MCP 工具，并继续用真实 UI 鼠标路径测试“职业证书考评服务推广”这类完整任务。
