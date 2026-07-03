@@ -1,0 +1,92 @@
+{
+  "id": "dongguan_manufacturing_growth_multi_agent",
+  "name": "宇智能制造业多 Agent 获客工作流",
+  "product_name": "宇智能",
+  "target_segment": "东莞本地制造业企业",
+  "mode": "draft_only",
+  "external_action_mode": "draft_only",
+  "default_model": "deepseek/deepseek-v4-pro",
+  "entry_script": "D:\\OpenClaw\\v2\\scripts\\run_manufacturing_multi_agent_workflow.ps1",
+  "agents": [
+    {
+      "id": "yuzhineng-manufacturing-chief",
+      "name": "宇智能制造业获客总控 Agent",
+      "role": "接收用户任务，拆解任务，调用各专业 Agent，汇总最终交付物，控制所有外部动作保持 draft_only。",
+      "skills": ["manufacturing_multi_agent_workflow", "product_intelligence", "domestic_signal_growth", "web-search", "archive_manufacturing_growth_result"]
+    },
+    {
+      "id": "yuzhineng-product-analyst",
+      "name": "产品理解 Agent",
+      "role": "调用 product_intelligence，输出产品画像、卖点、适合客户、内容角度和缺失信息。",
+      "skills": ["product_intelligence"]
+    },
+    {
+      "id": "yuzhineng-opportunity-researcher",
+      "name": "商机发掘 Agent",
+      "role": "调用 domestic_signal_growth 和公开搜索适配器，输出客户方向、采购信号、公开来源和商机评分。",
+      "skills": ["domestic_signal_growth", "web-search"]
+    },
+    {
+      "id": "yuzhineng-content-producer",
+      "name": "宣传物料 Agent",
+      "role": "生成小红书笔记、抖音脚本、公众号大纲、产品介绍和销售话术草稿。",
+      "skills": ["domestic_signal_growth"]
+    },
+    {
+      "id": "yuzhineng-social-operator",
+      "name": "社媒运营 Agent",
+      "role": "生成 7 天发布计划、评论回复草稿、私信草稿和 30 天账号养成计划；不真实发布、评论或私信。",
+      "skills": ["domestic_signal_growth"]
+    },
+    {
+      "id": "yuzhineng-factory-handoff",
+      "name": "工厂对接 Agent",
+      "role": "生成客户跟进摘要、销售交接单、跟进 SOP 和待办事项。",
+      "skills": ["domestic_signal_growth", "docx"]
+    },
+    {
+      "id": "yuzhineng-safety-reviewer",
+      "name": "风控审核 Agent",
+      "role": "检查真实外发、夸大宣传、伪造来源、敏感信息和人工审批要求。",
+      "skills": []
+    },
+    {
+      "id": "yuzhineng-summary-agent",
+      "name": "归纳 Agent",
+      "role": "读取各专业 Agent 的最终输出、返工日志和项目文件，生成最终总结、缺失项和下一步建议。",
+      "skills": ["manufacturing_multi_agent_workflow"]
+    },
+    {
+      "id": "yuzhineng-archive-agent",
+      "name": "归档 Agent",
+      "role": "调用 archive_manufacturing_growth_result，把成果保存到项目工作区并更新项目索引。",
+      "skills": ["archive_manufacturing_growth_result"]
+    }
+  ],
+  "steps": [
+    "chief_plan",
+    "product_understanding",
+    "opportunity_discovery",
+    "content_materials",
+    "social_operations",
+    "factory_handoff",
+    "safety_review",
+    "summary_result",
+    "archive_result",
+    "chief_summary"
+  ],
+  "safety": {
+    "approval_required": true,
+    "external_action_mode": "draft_only",
+    "forbidden": [
+      "email.send",
+      "dm.send",
+      "comment.post",
+      "post.publish",
+      "social.login",
+      "read.secrets",
+      "invent.sources",
+      "invent.contacts"
+    ]
+  }
+}

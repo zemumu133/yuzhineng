@@ -1,0 +1,9 @@
+{
+  "product": "职业证书考评服务",
+  "industry": "教育培训",
+  "target_customers": ["培训机构", "人力资源公司"],
+  "city": "全国",
+  "platforms": ["小红书", "抖音"],
+  "mode": "draft_only",
+  "search_required": true
+}

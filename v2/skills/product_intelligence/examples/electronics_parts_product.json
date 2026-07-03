@@ -1,0 +1,16 @@
+{
+  "company_location": "东莞",
+  "factory_type": "电子配件厂",
+  "product_name": "电子连接件、线束、充电配件",
+  "product_description": "面向电子厂、品牌商和维修渠道的电子配件。",
+  "materials": ["铜件", "塑胶外壳", "线材"],
+  "specifications": ["定制线束", "小批量打样", "批量生产"],
+  "factory_capabilities": ["打样", "小批量", "批量生产", "定制规格"],
+  "certifications": [],
+  "delivery_cycle": "",
+  "price_range": "",
+  "typical_customers": ["电子厂", "品牌商", "跨境卖家", "维修渠道"],
+  "target_market": "内贸 / 跨境 / 全国",
+  "platforms": ["小红书", "抖音", "公众号"],
+  "mode": "draft_only"
+}

@@ -1,0 +1,49 @@
+{
+  "id": "product_intelligence",
+  "name": "产品资料理解",
+  "version": "0.1.0-mvp",
+  "description": "面向东莞制造业企业的产品资料理解 Skill，提炼产品画像、卖点、适合客户、应用场景、内容角度、销售重点和后续获客输入。",
+  "entry": "product_intelligence.ps1",
+  "runtime": "powershell",
+  "mode": "draft_only",
+  "inputs": {
+    "company_location": "东莞",
+    "factory_type": "包装厂 / 健身器材厂 / 电子配件厂 / 五金厂 / 塑胶厂 / 其他",
+    "product_name": "产品名称",
+    "product_description": "产品描述",
+    "materials": ["材料"],
+    "specifications": ["规格"],
+    "factory_capabilities": ["工厂能力"],
+    "certifications": ["认证"],
+    "delivery_cycle": "交期",
+    "price_range": "价格区间",
+    "typical_customers": ["典型客户"],
+    "target_market": "内贸 / 外贸 / 本地 / 全国 / 跨境",
+    "platforms": ["小红书", "抖音", "公众号"],
+    "mode": "draft_only"
+  },
+  "outputs": [
+    "product_profile",
+    "selling_points",
+    "suitable_customer_segments",
+    "application_scenarios",
+    "content_angles",
+    "sales_talking_points",
+    "missing_information",
+    "risk_notes",
+    "next_growth_inputs"
+  ],
+  "safety": {
+    "external_action_mode": "draft_only",
+    "forbidden": [
+      "email.send",
+      "dm.send",
+      "comment.post",
+      "post.publish",
+      "social.login",
+      "read.secrets",
+      "invent.sources",
+      "invent.contacts"
+    ]
+  }
+}

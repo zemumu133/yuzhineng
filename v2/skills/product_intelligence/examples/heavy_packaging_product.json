@@ -1,0 +1,16 @@
+{
+  "company_location": "东莞",
+  "factory_type": "包装厂",
+  "product_name": "重型包装纸箱、物流包装、出口包装",
+  "product_description": "面向重货、电商仓储和外贸出货的高强度纸箱。",
+  "materials": ["高强瓦楞纸", "加厚纸板"],
+  "specifications": ["可定制尺寸", "五层/七层结构"],
+  "factory_capabilities": ["定制尺寸", "印刷", "抗压", "出口包装"],
+  "certifications": [],
+  "delivery_cycle": "",
+  "price_range": "",
+  "typical_customers": ["电商仓储", "制造工厂", "物流公司", "外贸企业"],
+  "target_market": "内贸 / 外贸 / 全国",
+  "platforms": ["小红书", "抖音", "公众号"],
+  "mode": "draft_only"
+}

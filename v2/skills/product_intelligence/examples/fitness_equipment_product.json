@@ -1,0 +1,16 @@
+{
+  "company_location": "东莞",
+  "factory_type": "健身器材厂",
+  "product_name": "哑铃、力量训练器材、家用健身器材",
+  "product_description": "面向家用、商用和团购客户的力量训练产品。",
+  "materials": ["钢材", "橡胶包胶", "可调节结构"],
+  "specifications": ["可调节重量", "定制颜色", "家用/商用规格"],
+  "factory_capabilities": ["OEM/ODM", "定制颜色", "批量供货"],
+  "certifications": [],
+  "delivery_cycle": "",
+  "price_range": "",
+  "typical_customers": ["健身房", "经销商", "跨境卖家", "团购客户"],
+  "target_market": "内贸 / 跨境 / 全国",
+  "platforms": ["小红书", "抖音", "公众号"],
+  "mode": "draft_only"
+}

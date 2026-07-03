@@ -1,0 +1,46 @@
+{
+  "id": "manufacturing_multi_agent_workflow",
+  "name": "制造业多 Agent 获客工作流",
+  "version": "0.1.0-mvp",
+  "description": "宇智能总控 Agent 使用的制造业获客多 Agent 编排 Skill，按固定顺序调用产品理解、商机发掘、宣传物料、社媒运营、工厂对接、风控审核和归档。",
+  "entry": "run_manufacturing_multi_agent_workflow.ps1",
+  "runtime": "powershell",
+  "mode": "draft_only",
+  "inputs": {
+    "company_location": "东莞",
+    "factory_type": "制造业工厂类型",
+    "product_name": "产品名称",
+    "product_description": "产品描述",
+    "factory_capabilities": ["工厂能力"],
+    "target_customer_hint": ["目标客户"],
+    "platforms": ["小红书", "抖音", "公众号"],
+    "mode": "draft_only"
+  },
+  "outputs": [
+    "workflow_run_dir",
+    "project_dir",
+    "report_path",
+    "handoff_path",
+    "projects_index_html",
+    "growth_os.files.action_intents",
+    "growth_os.files.approval_queue",
+    "growth_os.files.review_report",
+    "growth_os.files.lead_candidates",
+    "growth_os.files.evidence",
+    "agent_count",
+    "safety"
+  ],
+  "safety": {
+    "external_action_mode": "draft_only",
+    "forbidden": [
+      "email.send",
+      "dm.send",
+      "comment.post",
+      "post.publish",
+      "social.login",
+      "read.secrets",
+      "invent.sources",
+      "invent.contacts"
+    ]
+  }
+}

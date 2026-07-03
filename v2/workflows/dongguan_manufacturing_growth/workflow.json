@@ -1,0 +1,68 @@
+{
+  "id": "dongguan_manufacturing_growth",
+  "name": "东莞制造业获客工作流",
+  "product_name": "宇智能",
+  "target_segment": "东莞本地制造业企业",
+  "mode": "draft_only",
+  "default_model": "deepseek/deepseek-v4-pro",
+  "skill": "domestic_signal_growth",
+  "agents": [
+    "yuzhineng-manufacturing-chief",
+    "yuzhineng-product-analyst",
+    "yuzhineng-opportunity-researcher",
+    "yuzhineng-content-producer",
+    "yuzhineng-social-operator",
+    "yuzhineng-factory-handoff"
+  ],
+  "steps": [
+    {
+      "id": "product_understanding",
+      "name": "产品资料理解",
+      "owner_agent_id": "yuzhineng-product-analyst",
+      "inputs": ["产品名称", "产品图片/文档/描述", "工厂能力", "目标市场", "客单价区间", "交付周期", "认证资质", "典型客户"],
+      "outputs": ["产品卖点", "适合客户类型", "采购决策人", "应用场景", "内容卖点", "风险点"]
+    },
+    {
+      "id": "opportunity_discovery",
+      "name": "商机发掘",
+      "owner_agent_id": "yuzhineng-opportunity-researcher",
+      "inputs": ["产品理解结果", "目标城市", "目标行业", "平台"],
+      "outputs": ["潜在客户类型", "公开需求信号", "采购场景", "搜索关键词", "来源链接", "商机评分"]
+    },
+    {
+      "id": "content_materials",
+      "name": "宣传物料生成",
+      "owner_agent_id": "yuzhineng-content-producer",
+      "outputs": ["小红书笔记草稿", "抖音短视频脚本", "公众号文章大纲", "产品介绍文案", "销售话术", "评论回复草稿", "私信草稿"]
+    },
+    {
+      "id": "social_publish_plan",
+      "name": "社媒发布计划",
+      "owner_agent_id": "yuzhineng-social-operator",
+      "outputs": ["7 天发布计划", "每天主题", "发布平台", "内容形式", "人工审批项", "后续可自动发布项"]
+    },
+    {
+      "id": "comment_dm_review",
+      "name": "评论/私信处理",
+      "owner_agent_id": "yuzhineng-social-operator",
+      "outputs": ["评论分类规则", "高价值评论识别规则", "回复草稿", "私信草稿", "禁止回复风险提醒"]
+    },
+    {
+      "id": "account_nurturing",
+      "name": "账号养成",
+      "owner_agent_id": "yuzhineng-social-operator",
+      "outputs": ["30 天内容方向", "账号定位", "粉丝互动策略", "行业关键词", "内容复盘指标"]
+    },
+    {
+      "id": "factory_handoff",
+      "name": "客户对接到工厂",
+      "owner_agent_id": "yuzhineng-factory-handoff",
+      "outputs": ["高价值客户摘要", "客户需求判断", "推荐跟进人", "销售交接单", "跟进话术", "待办事项"]
+    }
+  ],
+  "safety": {
+    "external_action_mode": "draft_only",
+    "approval_required": true,
+    "forbidden": ["post.publish", "comment.post", "dm.send", "email.send", "social.login", "read.secrets"]
+  }
+}

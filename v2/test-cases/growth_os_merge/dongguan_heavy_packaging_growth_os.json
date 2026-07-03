@@ -1,0 +1,32 @@
+{
+  "id": "growth-os-merge-heavy-packaging",
+  "name": "东莞重型包装纸箱厂 Growth OS 合并测试",
+  "input": {
+    "company_location": "东莞",
+    "factory_type": "包装厂",
+    "product_name": "重型包装纸箱、物流包装、出口包装",
+    "product_description": "为电商仓储、制造工厂、物流公司和外贸企业提供定制重型纸箱、物流包装和出口包装。",
+    "factory_capabilities": ["定制尺寸", "印刷", "抗压", "出口包装"],
+    "materials": ["瓦楞纸板", "加厚纸板"],
+    "certifications": ["可按客户要求补充出口包装资料"],
+    "target_customer_hint": ["电商仓储", "制造工厂", "物流公司", "外贸企业"],
+    "platforms": ["小红书", "抖音", "公众号"],
+    "manual_seed_urls": [
+      {
+        "url": "https://www.dg.gov.cn/",
+        "title": "东莞公开政务信息",
+        "excerpt": "用于公开来源占位和测试，不代表具体客户。"
+      }
+    ],
+    "search_required": false,
+    "mode": "draft_only"
+  },
+  "expected": {
+    "lead_candidates": true,
+    "evidence": true,
+    "action_intents": true,
+    "approval_queue": true,
+    "real_external_send": false
+  }
+}
+

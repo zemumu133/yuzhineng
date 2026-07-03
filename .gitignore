@@ -1,0 +1,99 @@
+# Secrets and credentials
+secrets/
+*.env
+*.key
+*.token
+*.pem
+*.p12
+*.pfx
+
+# Runtime data
+logs/
+backups/
+data/
+exports/
+database/
+/approval_queue/
+browser_profiles/
+workspaces/
+generated_media/
+restore/
+
+# Browser profile sensitive files
+**/Default/Cookies
+**/Default/Network/
+**/Default/Local Storage/
+**/Default/Session Storage/
+
+# Databases
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+
+# Dependencies and build output
+node_modules/
+dist/
+build/
+.cache/
+.vite/
+.next/
+coverage/
+__pycache__/
+*.pyc
+
+# Archives and temporary files
+*.log
+*.zip
+*.7z
+*.rar
+*.tmp
+
+# Legacy Phase 1.x implementation is kept as local reference/debug state.
+# Do not include it in the v2 baseline unless a later phase explicitly audits it.
+/agent-cards/
+/agents/
+/config/
+/console/
+/docs/
+/gateway/
+/scripts/
+
+# Phase 1A external PoC sources and generated outputs
+/v2/client-shell/lobsterai/src/
+/v2/client-shell/lobsterai/openclaw/
+/v2/client-shell/lobsterai/runtime/
+/v2/client-shell/lobsterai/openclaw-runtime/
+/v2/client-shell/lobsterai/**/node_modules/
+/v2/client-shell/lobsterai/**/dist/
+/v2/client-shell/lobsterai/**/build/
+/v2/client-shell/lobsterai/**/out/
+/v2/client-shell/lobsterai/**/release/
+/v2/client-shell/lobsterai/**/.turbo/
+/v2/client-shell/lobsterai/**/.parcel-cache/
+/v2/client-shell/lobsterai/**/.electron/
+/v2/runtimes/
+/v2/packages/
+
+# Phase 1A Dev Auto-Run local-only config and generated test traces
+/v2/dev-config/dev-auto-run.json
+/v2/data/test-runs/
+/v2/reports/assets/lobsterai/ui-*.png
+/v2/reports/assets/lobsterai/pending-*.txt
+
+# Phase 2C local project archive data and UI traces
+/v2/projects/
+/v2/data/ui-runs/
+
+# Phase 2D local UI debugging screenshots; selected evidence may be force-added
+/v2/reports/assets/phase2d-product-intelligence-ui/phase2d-ui-*.png
+/v2/reports/assets/phase2d-product-intelligence-ui/phase2d-launch-terminal.png
+/v2/reports/assets/phase2d-product-intelligence-ui/phase2d-lobster-after-minimize-others.png
+/v2/reports/assets/phase2d-product-intelligence-ui/phase2d-lobster-visible-after-clean.png
+/v2/reports/assets/phase2d-product-intelligence-ui/phase2d-task1-heavy-packaging-sent.png
+/v2/reports/assets/phase2d-product-intelligence-ui/phase2d-task1-heavy-packaging-product-understanding-ui.png
+/v2/reports/assets/phase2d-product-intelligence-ui/phase2d-task2-electronics-ready.png
+/v2/reports/assets/phase2d-product-intelligence-ui/phase2d-task2-electronics-sent.png
+/v2/reports/assets/phase2e-multi-agent-ui/
+/v2/reports/assets/phase2f-real-agent-collaboration/
+/v2/reports/assets/phase-m1-growth-os-merge-ui/
+/v2/reports/assets/phase-m1-1-ui-agent-dedup-archive/
