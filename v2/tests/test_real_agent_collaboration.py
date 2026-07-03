@@ -1,6 +1,7 @@
 import importlib.util
 import json
 import shutil
+import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
@@ -37,6 +38,106 @@ class RealAgentCollaborationTests(unittest.TestCase):
 
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _create_lobsterai_schema(self, db_path: Path):
+        con = sqlite3.connect(str(db_path))
+        try:
+            cur = con.cursor()
+            cur.execute(
+                """
+                CREATE TABLE agents (
+                    id TEXT PRIMARY KEY,
+                    name TEXT,
+                    description TEXT,
+                    system_prompt TEXT,
+                    identity TEXT,
+                    model TEXT,
+                    working_directory TEXT,
+                    icon TEXT,
+                    skill_ids TEXT,
+                    enabled INTEGER,
+                    pinned INTEGER,
+                    pin_order INTEGER,
+                    is_default INTEGER,
+                    source TEXT,
+                    preset_id TEXT,
+                    created_at INTEGER,
+                    updated_at INTEGER
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE cowork_sessions (
+                    id TEXT PRIMARY KEY,
+                    title TEXT,
+                    claude_session_id TEXT,
+                    status TEXT,
+                    pinned INTEGER,
+                    pin_order INTEGER,
+                    cwd TEXT,
+                    system_prompt TEXT,
+                    model_override TEXT,
+                    execution_mode TEXT,
+                    parent_session_id TEXT,
+                    forked_from_message_id TEXT,
+                    forked_at INTEGER,
+                    fork_mode TEXT,
+                    fork_workspace_path TEXT,
+                    fork_git_branch TEXT,
+                    fork_git_base_ref TEXT,
+                    created_at INTEGER,
+                    updated_at INTEGER,
+                    active_skill_ids TEXT,
+                    agent_id TEXT
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE cowork_messages (
+                    id TEXT PRIMARY KEY,
+                    session_id TEXT,
+                    type TEXT,
+                    content TEXT,
+                    metadata TEXT,
+                    created_at INTEGER,
+                    sequence INTEGER
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE subagent_runs (
+                    id TEXT PRIMARY KEY,
+                    parent_session_id TEXT,
+                    session_key TEXT,
+                    agent_id TEXT,
+                    task TEXT,
+                    label TEXT,
+                    status TEXT,
+                    created_at INTEGER,
+                    ended_at INTEGER,
+                    messages_persisted INTEGER
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE subagent_messages (
+                    id TEXT PRIMARY KEY,
+                    run_id TEXT,
+                    type TEXT,
+                    content TEXT,
+                    metadata TEXT,
+                    created_at INTEGER,
+                    sequence INTEGER
+                )
+                """
+            )
+            con.commit()
+        finally:
+            con.close()
 
     def test_creates_real_agent_group_rework_and_workspace(self):
         workflow = load_workflow_module()
@@ -129,6 +230,38 @@ class RealAgentCollaborationTests(unittest.TestCase):
         )
         self.assertFalse(result["lobsterai_ui_mirror"]["ok"])
         self.assertEqual(result["lobsterai_ui_mirror"]["mirrored_sessions"], 0)
+
+    def test_lobsterai_mirror_uses_desktop_subagent_statuses(self):
+        workflow = load_workflow_module()
+        db_path = self.tmp / "lobsterai.sqlite"
+        self._create_lobsterai_schema(db_path)
+
+        result = workflow.run_workflow(
+            self.input_payload,
+            runs_root=self.runs_root,
+            collaboration_root=self.collaboration_root,
+            projects_root=self.projects_root,
+            created_at="2026-07-03T12:12:30+0800",
+            mirror_lobsterai_ui=True,
+            lobsterai_sqlite=db_path,
+        )
+
+        self.assertTrue(result["lobsterai_ui_mirror"]["ok"])
+        con = sqlite3.connect(str(db_path))
+        try:
+            statuses = [row[0] for row in con.execute("SELECT DISTINCT status FROM subagent_runs")]
+            run_count = con.execute("SELECT COUNT(*) FROM subagent_runs").fetchone()[0]
+            user_message_count = con.execute(
+                "SELECT COUNT(*) FROM subagent_messages WHERE type = 'user'"
+            ).fetchone()[0]
+            assistant_message_count = con.execute(
+                "SELECT COUNT(*) FROM subagent_messages WHERE type = 'assistant'"
+            ).fetchone()[0]
+        finally:
+            con.close()
+        self.assertEqual(statuses, ["done"])
+        self.assertEqual(user_message_count, run_count)
+        self.assertEqual(assistant_message_count, run_count)
 
 
 if __name__ == "__main__":

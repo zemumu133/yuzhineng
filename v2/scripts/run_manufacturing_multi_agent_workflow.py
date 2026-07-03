@@ -590,12 +590,12 @@ def run_workflow(
 
 ## 9. 真实多 Agent 协作交付
 
-- Agent 工作群：{collaboration_output['agent_group_chat_html']}
-- Agent 成果工作台：{collaboration_output['agent_workspace_html']}
+- LobsterAI 桌面端入口：左侧“我的 Agent”中查看各专业 Agent 的任务会话；打开“总控 Agent”会话可查看子 Agent 协作记录。
 - 归纳 Agent 总结：{collaboration_output['final_summary']}
 - 群聊发言 Agent 数：{collaboration_output['agent_speaker_count']}
 - 风控返工数量：{collaboration_output['rework_count']}
 - 左侧 Agent 任务镜像：{'已请求写入 LobsterAI 本地会话' if mirror_lobsterai_ui else '本次未启用'}
+- 调试归档文件：{collaboration_output['agent_group_chat_html']}；{collaboration_output['agent_workspace_html']}（仅用于开发验收，不作为普通用户主入口）
 
 本轮多 Agent 协作已拆分为独立子任务、独立输出、群聊消息、返工日志和最终总结。所有外部动作仍为 draft_only。
 """

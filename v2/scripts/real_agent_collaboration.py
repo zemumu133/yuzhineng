@@ -831,20 +831,43 @@ def mirror_collaboration_to_lobsterai(
                 ),
             )
             cur.execute("DELETE FROM cowork_messages WHERE session_id = ?", (session_id,))
+            assistant_lines = [
+                task["output_summary"],
+                "",
+                "产出文件：",
+                *[f"- {path}" for path in task.get("output_files", [])],
+                "",
+                "外部动作模式：draft_only，未真实发布、评论、私信或发邮件。",
+            ]
+            if task["agent_id"] == "yuzhineng-manufacturing-chief":
+                group_messages = collaboration.get("group_messages_data", [])[:12]
+                assistant_lines = [
+                    "已在 LobsterAI 桌面端创建宇智能多 Agent 协作任务。",
+                    "",
+                    "你可以在左侧“我的 Agent”下查看各专业 Agent 的独立任务；当前总控会话下方会展示子 Agent 协作记录。",
+                    "",
+                    "参与 Agent：",
+                    *[
+                        f"- {item['agent_name']}：{item['assignment']}"
+                        for item in collaboration["agent_tasks_data"]
+                    ],
+                    "",
+                    "工作群摘要：",
+                    *[
+                        f"- {message['sender_name']}：{message['content']}"
+                        for message in group_messages
+                    ],
+                    "",
+                    f"归纳 Agent 总结：{collaboration['final_summary']}",
+                    "",
+                    f"风控返工数量：{collaboration['rework_count']}",
+                    "外部动作模式：draft_only，未真实发布、评论、私信或发邮件。",
+                ]
             messages = [
                 ("user", task["input"], {"phase": "2F", "task_id": task["task_id"], "project_id": task["project_id"]}),
                 (
                     "assistant",
-                    "\n".join(
-                        [
-                            task["output_summary"],
-                            "",
-                            "产出文件：",
-                            *[f"- {path}" for path in task.get("output_files", [])],
-                            "",
-                            "外部动作模式：draft_only，未真实发布、评论、私信或发邮件。",
-                        ]
-                    ),
+                    "\n".join(assistant_lines),
                     {
                         "phase": "2F",
                         "model": DEFAULT_MODEL,
@@ -882,7 +905,7 @@ def mirror_collaboration_to_lobsterai(
                   id, parent_session_id, session_key, agent_id, task, label, status,
                   created_at, ended_at, messages_persisted
                 )
-                VALUES (?, ?, ?, ?, ?, ?, 'completed', ?, ?, 1)
+                VALUES (?, ?, ?, ?, ?, ?, 'done', ?, ?, 1)
                 """,
                 (
                     run_id,
@@ -899,14 +922,36 @@ def mirror_collaboration_to_lobsterai(
             cur.execute(
                 """
                 INSERT INTO subagent_messages (id, run_id, type, content, metadata, created_at, sequence)
-                VALUES (?, ?, 'assistant', ?, ?, ?, 1)
+                VALUES (?, ?, 'user', ?, ?, ?, 1)
                 """,
                 (
                     f"{run_id}-msg-1",
                     run_id,
-                    task["output_summary"],
-                    json.dumps({"phase": "2F", "output_files": task.get("output_files", [])}, ensure_ascii=False),
+                    task["input"],
+                    json.dumps({"phase": "2F", "task_id": task["task_id"]}, ensure_ascii=False),
                     now + index + 2,
+                ),
+            )
+            cur.execute(
+                """
+                INSERT INTO subagent_messages (id, run_id, type, content, metadata, created_at, sequence)
+                VALUES (?, ?, 'assistant', ?, ?, ?, 2)
+                """,
+                (
+                    f"{run_id}-msg-2",
+                    run_id,
+                    "\n".join(
+                        [
+                            task["output_summary"],
+                            "",
+                            "产出文件：",
+                            *[f"- {path}" for path in task.get("output_files", [])],
+                            "",
+                            "外部动作模式：draft_only，未真实发布、评论、私信或发邮件。",
+                        ]
+                    ),
+                    json.dumps({"phase": "2F", "output_files": task.get("output_files", [])}, ensure_ascii=False),
+                    now + index + 3,
                 ),
             )
         con.commit()
