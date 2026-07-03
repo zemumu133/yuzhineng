@@ -896,64 +896,14 @@ def mirror_collaboration_to_lobsterai(
             mirrored_sessions += 1
 
         parent_session_id = f"phase2f-{plan['workflow_run_id']}-yuzhineng-manufacturing-chief"
+        cur.execute(
+            """
+            DELETE FROM subagent_messages
+            WHERE run_id IN (SELECT id FROM subagent_runs WHERE parent_session_id = ?)
+            """,
+            (parent_session_id,),
+        )
         cur.execute("DELETE FROM subagent_runs WHERE parent_session_id = ?", (parent_session_id,))
-        for index, task in enumerate(collaboration["agent_tasks_data"], start=1):
-            run_id = f"{parent_session_id}-subagent-{index:02d}"
-            cur.execute(
-                """
-                INSERT OR REPLACE INTO subagent_runs (
-                  id, parent_session_id, session_key, agent_id, task, label, status,
-                  created_at, ended_at, messages_persisted
-                )
-                VALUES (?, ?, ?, ?, ?, ?, 'done', ?, ?, 1)
-                """,
-                (
-                    run_id,
-                    parent_session_id,
-                    task["task_id"],
-                    task["agent_id"],
-                    task["input"],
-                    task["agent_name"],
-                    now + index,
-                    now + index + 1,
-                ),
-            )
-            cur.execute("DELETE FROM subagent_messages WHERE run_id = ?", (run_id,))
-            cur.execute(
-                """
-                INSERT INTO subagent_messages (id, run_id, type, content, metadata, created_at, sequence)
-                VALUES (?, ?, 'user', ?, ?, ?, 1)
-                """,
-                (
-                    f"{run_id}-msg-1",
-                    run_id,
-                    task["input"],
-                    json.dumps({"phase": "2F", "task_id": task["task_id"]}, ensure_ascii=False),
-                    now + index + 2,
-                ),
-            )
-            cur.execute(
-                """
-                INSERT INTO subagent_messages (id, run_id, type, content, metadata, created_at, sequence)
-                VALUES (?, ?, 'assistant', ?, ?, ?, 2)
-                """,
-                (
-                    f"{run_id}-msg-2",
-                    run_id,
-                    "\n".join(
-                        [
-                            task["output_summary"],
-                            "",
-                            "产出文件：",
-                            *[f"- {path}" for path in task.get("output_files", [])],
-                            "",
-                            "外部动作模式：draft_only，未真实发布、评论、私信或发邮件。",
-                        ]
-                    ),
-                    json.dumps({"phase": "2F", "output_files": task.get("output_files", [])}, ensure_ascii=False),
-                    now + index + 3,
-                ),
-            )
         con.commit()
         return {"ok": True, "backup_path": backup_path, "mirrored_sessions": mirrored_sessions}
     finally:

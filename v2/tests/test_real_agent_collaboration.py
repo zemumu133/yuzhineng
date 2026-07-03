@@ -231,7 +231,7 @@ class RealAgentCollaborationTests(unittest.TestCase):
         self.assertFalse(result["lobsterai_ui_mirror"]["ok"])
         self.assertEqual(result["lobsterai_ui_mirror"]["mirrored_sessions"], 0)
 
-    def test_lobsterai_mirror_uses_desktop_subagent_statuses(self):
+    def test_lobsterai_mirror_keeps_specialists_as_top_level_chat_agents(self):
         workflow = load_workflow_module()
         db_path = self.tmp / "lobsterai.sqlite"
         self._create_lobsterai_schema(db_path)
@@ -249,19 +249,26 @@ class RealAgentCollaborationTests(unittest.TestCase):
         self.assertTrue(result["lobsterai_ui_mirror"]["ok"])
         con = sqlite3.connect(str(db_path))
         try:
-            statuses = [row[0] for row in con.execute("SELECT DISTINCT status FROM subagent_runs")]
-            run_count = con.execute("SELECT COUNT(*) FROM subagent_runs").fetchone()[0]
-            user_message_count = con.execute(
-                "SELECT COUNT(*) FROM subagent_messages WHERE type = 'user'"
-            ).fetchone()[0]
-            assistant_message_count = con.execute(
-                "SELECT COUNT(*) FROM subagent_messages WHERE type = 'assistant'"
-            ).fetchone()[0]
+            subagent_run_count = con.execute("SELECT COUNT(*) FROM subagent_runs").fetchone()[0]
+            subagent_message_count = con.execute("SELECT COUNT(*) FROM subagent_messages").fetchone()[0]
+            specialist_sessions = [
+                row[0]
+                for row in con.execute(
+                    """
+                    SELECT agent_id
+                    FROM cowork_sessions
+                    WHERE agent_id != 'yuzhineng-manufacturing-chief'
+                    ORDER BY agent_id
+                    """
+                )
+            ]
         finally:
             con.close()
-        self.assertEqual(statuses, ["done"])
-        self.assertEqual(user_message_count, run_count)
-        self.assertEqual(assistant_message_count, run_count)
+        self.assertEqual(subagent_run_count, 0)
+        self.assertEqual(subagent_message_count, 0)
+        self.assertIn("yuzhineng-product-analyst", specialist_sessions)
+        self.assertIn("yuzhineng-opportunity-researcher", specialist_sessions)
+        self.assertIn("yuzhineng-content-producer", specialist_sessions)
 
 
 if __name__ == "__main__":
