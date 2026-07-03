@@ -18,9 +18,11 @@ LOCAL_CONFIG = CONFIG_DIR / "dev-auto-run.json"
 TEST_RUNS_DIR = V2 / "data" / "test-runs"
 MANUFACTURING_TEST_CASE_DIR = V2 / "test-cases" / "manufacturing_growth"
 PRODUCT_INTELLIGENCE_TEST_CASE_DIR = V2 / "test-cases" / "product_intelligence"
+MULTI_AGENT_TEST_CASE_DIR = V2 / "test-cases" / "multi_agent_workflow"
 REPORT_PATH = V2 / "reports" / "LOBSTERAI_DEV_AUTORUN_GATE_REPORT_CN.md"
 DOMESTIC_SKILL = V2 / "skills" / "domestic_signal_growth" / "domestic_signal_growth.ps1"
 PRODUCT_INTELLIGENCE_SKILL = V2 / "skills" / "product_intelligence" / "product_intelligence.ps1"
+MULTI_AGENT_WORKFLOW_SCRIPT = V2 / "scripts" / "run_manufacturing_multi_agent_workflow.py"
 MODEL = "deepseek/deepseek-v4-pro"
 
 
@@ -54,7 +56,7 @@ MANUFACTURING_AGENTS = [
         "id": "yuzhineng-manufacturing-chief",
         "name": "宇智能制造业获客总控 Agent",
         "description": "接收老板/运营输入，拆解制造业获客任务，汇总产品理解、商机、内容、社媒、交接单和待办。",
-        "skills": ["product_intelligence", "web-search", "domestic_signal_growth", "docx", "xlsx"],
+        "skills": ["manufacturing_multi_agent_workflow", "product_intelligence", "web-search", "domestic_signal_growth", "docx", "xlsx"],
         "denied": ["真实外发", "登录社媒", "读取 secrets", "自动发布"],
     },
     {
@@ -91,6 +93,20 @@ MANUFACTURING_AGENTS = [
         "description": "生成销售交接单、客户需求摘要、推荐跟进人和待办，把高价值客户转给工厂销售/老板。",
         "skills": ["domestic_signal_growth", "xlsx", "docx"],
         "denied": ["真实发邮件", "批量导出", "读取 secrets"],
+    },
+    {
+        "id": "yuzhineng-safety-reviewer",
+        "name": "风控审核 Agent",
+        "description": "检查真实外发、夸大宣传、伪造来源、敏感信息和人工审批要求。",
+        "skills": ["domestic_signal_growth"],
+        "denied": ["真实外发", "读取 secrets", "绕过验证码", "伪造来源"],
+    },
+    {
+        "id": "yuzhineng-archive-agent",
+        "name": "归档 Agent",
+        "description": "把制造业获客成果保存到项目工作区，更新项目索引，并输出成果路径。",
+        "skills": ["docx", "xlsx"],
+        "denied": ["读取 secrets", "真实外发", "删除项目数据"],
     },
 ]
 
@@ -347,11 +363,20 @@ def mirror_lobsterai_agents(config: dict[str, Any], agents: list[dict[str, Any]]
 
 
 def build_agent_prompt(agent: dict[str, Any]) -> str:
+    workflow_hint = ""
+    if agent["id"] == "yuzhineng-manufacturing-chief":
+        workflow_hint = (
+            "\n当用户输入制造业获客、推广、社媒内容、销售交接相关任务时，优先使用 "
+            "manufacturing_multi_agent_workflow Skill 或本地脚本 "
+            "D:\\OpenClaw\\v2\\scripts\\run_manufacturing_multi_agent_workflow.ps1。"
+            "完成后用中文展示 report.md 的八个 Agent 输出段落，并告诉用户项目目录、report.md、handoff.docx 和 projects_index.html。"
+        )
     return (
         f"你是{agent['name']}。职责：{agent['description']}\n"
         f"允许能力：{', '.join(agent['skills'])}。\n"
         f"禁止：{', '.join(agent['denied'])}。\n"
         "所有外部动作只生成草稿，必须 draft_only，不真实发送、不评论、不私信、不发帖、不读 secrets。"
+        f"{workflow_hint}"
     )
 
 
@@ -1038,6 +1063,15 @@ def load_product_intelligence_test_tasks() -> list[dict[str, Any]]:
     return tasks
 
 
+def load_multi_agent_test_cases() -> list[dict[str, Any]]:
+    mapping = [
+        "dongguan_electronics_parts_multi_agent.json",
+        "dongguan_heavy_packaging_multi_agent.json",
+        "dongguan_fitness_equipment_multi_agent.json",
+    ]
+    return [read_json(MULTI_AGENT_TEST_CASE_DIR / file_name) for file_name in mapping]
+
+
 def phase2b_safety_check(task: dict[str, Any], domestic: dict[str, Any], model_result: dict[str, Any]) -> dict[str, Any]:
     parsed = domestic.get("parsed") or {}
     text = json.dumps(parsed, ensure_ascii=False)
@@ -1296,6 +1330,86 @@ def run_phase2d() -> int:
     return 0
 
 
+def run_phase2e() -> int:
+    started_at = time.strftime("%Y-%m-%d %H:%M:%S %z")
+    run_id = "phase2e-" + time.strftime("%Y%m%d-%H%M%S")
+    config = load_enabled_config()
+    run_dir = TEST_RUNS_DIR / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    agent_results = ensure_openclaw_agents(config, MANUFACTURING_AGENTS)
+    ui_results = mirror_lobsterai_agents(config, MANUFACTURING_AGENTS)
+    task_summaries = []
+    raw_results = []
+
+    for case in load_multi_agent_test_cases():
+        case_input = dict(case["input"])
+        case_input.setdefault("mode", "draft_only")
+        input_path = run_dir / f"{case['id']}.input.json"
+        output_path = run_dir / f"{case['id']}.result.json"
+        write_json(input_path, case_input)
+        result = run(
+            [
+                "python",
+                str(MULTI_AGENT_WORKFLOW_SCRIPT),
+                "--input-file",
+                str(input_path),
+                "--runs-root",
+                str(run_dir / "workflow-runs"),
+                "--projects-root",
+                str(run_dir / "projects"),
+                "--output-file",
+                str(output_path),
+            ],
+            timeout=180,
+        )
+        parsed = read_json(output_path) if output_path.exists() else {}
+        raw_results.append({"case_id": case["id"], "command_result": result, "parsed": parsed})
+        project_dir = Path(parsed.get("project_dir") or "")
+        report_path = Path(parsed.get("report_path") or "")
+        task_summaries.append(
+            {
+                "case_id": case["id"],
+                "name": case["name"],
+                "ok": bool(parsed.get("ok")) and result["code"] == 0,
+                "model": parsed.get("model"),
+                "agent_count": parsed.get("agent_count"),
+                "workflow_run_dir": parsed.get("workflow_run_dir"),
+                "project_dir": parsed.get("project_dir"),
+                "has_project_dir": project_dir.exists(),
+                "has_report_md": report_path.exists(),
+                "has_handoff_docx": Path(parsed.get("handoff_path") or "").exists(),
+                "draft_only": parsed.get("mode") == "draft_only",
+                "real_external_send": bool((parsed.get("safety") or {}).get("real_external_send", True)),
+                "source_status": parsed.get("source_status"),
+            }
+        )
+
+    summary = {
+        "run_id": run_id,
+        "phase": "2E",
+        "started_at": started_at,
+        "model": MODEL,
+        "agent_results": agent_results,
+        "lobsterai_ui_agent_mirror": ui_results,
+        "task_summaries": task_summaries,
+        "completed": all(
+            item["ok"]
+            and item["draft_only"]
+            and item["has_project_dir"]
+            and item["has_report_md"]
+            and item["has_handoff_docx"]
+            and not item["real_external_send"]
+            for item in task_summaries
+        ),
+    }
+    write_json(run_dir / "summary.json", summary)
+    write_json(run_dir / "raw_results.json", raw_results)
+    write_json(TEST_RUNS_DIR / "latest-phase2e.json", {"run_id": run_id, "path": str(run_dir), "completed": summary["completed"]})
+    print(json.dumps(summary, ensure_ascii=False, indent=2))
+    return 0 if summary["completed"] else 2
+
+
 def generate_report(run_id: str, started_at: str, config: dict[str, Any], agent_results: list[dict[str, Any]], ui_results: list[dict[str, Any]], traces: list[dict[str, Any]]) -> None:
     all_done = all(t.get("completed") for t in traces)
     all_v4 = all(t.get("model") == "deepseek-v4-pro" for t in traces)
@@ -1451,6 +1565,7 @@ def main() -> int:
     parser.add_argument("--run-phase2a", action="store_true")
     parser.add_argument("--run-phase2b", action="store_true")
     parser.add_argument("--run-phase2d", action="store_true")
+    parser.add_argument("--run-phase2e", action="store_true")
     args = parser.parse_args()
 
     if args.init_local_config:
@@ -1462,6 +1577,8 @@ def main() -> int:
         return run_phase2b()
     if args.run_phase2d:
         return run_phase2d()
+    if args.run_phase2e:
+        return run_phase2e()
     if not args.run:
         parser.print_help()
         return 2

@@ -14,6 +14,7 @@
     "task.test.create",
     "task.test.update",
     "skill.domestic_signal_growth.call",
+    "skill.manufacturing_multi_agent_workflow.call",
     "tool.web_search.public",
     "tool.document.local",
     "write.v2.reports",
@@ -45,7 +46,8 @@
   "allowed_paths": [
     "D:\\OpenClaw\\v2\\reports",
     "D:\\OpenClaw\\v2\\data\\test-runs",
-    "D:\\OpenClaw\\v2\\skills\\domestic_signal_growth"
+    "D:\\OpenClaw\\v2\\skills\\domestic_signal_growth",
+    "D:\\OpenClaw\\v2\\skills\\manufacturing_multi_agent_workflow"
   ],
   "openclaw_cli": "D:\\DevTools\\node\\npm-global\\openclaw.cmd",
   "lobsterai_sqlite": "%APPDATA%\\LobsterAI\\lobsterai.sqlite",

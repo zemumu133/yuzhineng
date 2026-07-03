@@ -1,6 +1,7 @@
 param(
   [switch]$InitLocalConfig,
   [switch]$Run,
+  [switch]$RunPhase2E,
   [string]$Python = "python"
 )
 
@@ -19,6 +20,13 @@ if ($Run) {
   exit $LASTEXITCODE
 }
 
+if ($RunPhase2E) {
+  $env:YUZHINENG_DEV_AUTO_RUN = "1"
+  & $Python $scriptPath --run-phase2e
+  exit $LASTEXITCODE
+}
+
 Write-Host "Usage:"
 Write-Host "  .\dev-autorun-gate.ps1 -InitLocalConfig"
 Write-Host "  .\dev-autorun-gate.ps1 -Run"
+Write-Host "  .\dev-autorun-gate.ps1 -RunPhase2E"
