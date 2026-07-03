@@ -13,7 +13,7 @@ backups/
 data/
 exports/
 database/
-approval_queue/
+/approval_queue/
 browser_profiles/
 workspaces/
 generated_media/
@@ -94,3 +94,4 @@ __pycache__/
 /v2/reports/assets/phase2d-product-intelligence-ui/phase2d-task2-electronics-sent.png
 /v2/reports/assets/phase2e-multi-agent-ui/
 /v2/reports/assets/phase2f-real-agent-collaboration/
+/v2/reports/assets/phase-m1-growth-os-merge-ui/

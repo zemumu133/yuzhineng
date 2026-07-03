@@ -1,0 +1,30 @@
+{
+  "id": "growth-os-merge-electronics-connectors",
+  "name": "东莞电子连接件工厂 Growth OS 合并测试",
+  "input": {
+    "company_location": "东莞",
+    "factory_type": "电子配件厂",
+    "product_name": "电子连接件、线束、充电配件",
+    "product_description": "面向电子厂、品牌商、跨境卖家和维修渠道的连接件、线束和充电配件方案。",
+    "factory_capabilities": ["打样", "小批量", "批量生产", "定制规格"],
+    "target_customer_hint": ["电子厂", "品牌商", "跨境卖家", "维修渠道"],
+    "platforms": ["小红书", "抖音", "公众号"],
+    "manual_seed_urls": [
+      {
+        "url": "https://www.dg.gov.cn/",
+        "title": "东莞公开政务信息",
+        "excerpt": "用于公开来源占位和测试，不代表具体客户。"
+      }
+    ],
+    "search_required": false,
+    "mode": "draft_only"
+  },
+  "expected": {
+    "lead_candidates": true,
+    "evidence": true,
+    "action_intents": true,
+    "approval_queue": true,
+    "real_external_send": false
+  }
+}
+

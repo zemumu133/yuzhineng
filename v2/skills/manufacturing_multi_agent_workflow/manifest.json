@@ -22,6 +22,11 @@
     "report_path",
     "handoff_path",
     "projects_index_html",
+    "growth_os.files.action_intents",
+    "growth_os.files.approval_queue",
+    "growth_os.files.review_report",
+    "growth_os.files.lead_candidates",
+    "growth_os.files.evidence",
     "agent_count",
     "safety"
   ],

@@ -1,0 +1,32 @@
+{
+  "source_project_path": "D:\\Codex\\research-imai-work-teardown",
+  "source_branch": "feature/growth-os-cleanroom",
+  "source_commit": "7df7b92192fa2fb17adf566afc12ef258ced364d",
+  "source_modules_imported": [
+    "ActionIntent capability model, reimplemented in Python",
+    "high-risk feature flag defaults, mapped to v2/config/feature_flags.example.json",
+    "sandbox-only execution concept, reimplemented in Python",
+    "approval queue concept, reimplemented in Python",
+    "audit log concept, reimplemented in Python",
+    "project report/archive concept, integrated with existing Yuzhineng project archive"
+  ],
+  "imported_at": "2026-07-03T14:00:00+08:00",
+  "imported_by": "Codex",
+  "license_status": "Clean-room internal module. Upstream research module was not copied wholesale. No IMAI.WORK official source, API, database schema, crawler implementation, test account data or demo user data imported.",
+  "clean_room_statement": "This merge migrates reusable capability ideas from the clean-room Growth OS research module into Yuzhineng using new Python implementation and adapters. It excludes third-party source copies, official IMAI.WORK implementation details, secrets, cookies, browser profiles, databases and real user data.",
+  "excluded_files": [
+    "D:\\Codex\\research-imai-work-teardown\\.research_tmp\\*",
+    "D:\\Codex\\research-imai-work-teardown\\apps\\growth-os\\node_modules\\*",
+    "D:\\Codex\\research-imai-work-teardown\\apps\\growth-os\\dist\\*",
+    "D:\\Codex\\research-imai-work-teardown\\apps\\growth-os\\build\\*",
+    "D:\\Codex\\research-imai-work-teardown\\apps\\growth-os\\tests\\ui-cdp-verify.mjs",
+    "D:\\Codex\\research-imai-work-teardown\\projects\\growth_os_test\\*"
+  ],
+  "reason_for_exclusion": [
+    ".research_tmp contained browser profiles, temporary crawl outputs, logs and local research artifacts; it was quarantined under D:\\OpenClaw\\backups\\growth-os-source-quarantine and not imported.",
+    "node_modules, dist, build and caches are dependencies/build outputs and must not be committed.",
+    "UI CDP scripts and old verification output are not needed for the mainline Python capability merge.",
+    "test project archives are verification artifacts, not product modules."
+  ]
+}
+

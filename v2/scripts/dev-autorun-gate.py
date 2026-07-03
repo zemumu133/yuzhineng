@@ -19,6 +19,7 @@ TEST_RUNS_DIR = V2 / "data" / "test-runs"
 MANUFACTURING_TEST_CASE_DIR = V2 / "test-cases" / "manufacturing_growth"
 PRODUCT_INTELLIGENCE_TEST_CASE_DIR = V2 / "test-cases" / "product_intelligence"
 MULTI_AGENT_TEST_CASE_DIR = V2 / "test-cases" / "multi_agent_workflow"
+GROWTH_OS_MERGE_TEST_CASE_DIR = V2 / "test-cases" / "growth_os_merge"
 REPORT_PATH = V2 / "reports" / "LOBSTERAI_DEV_AUTORUN_GATE_REPORT_CN.md"
 DOMESTIC_SKILL = V2 / "skills" / "domestic_signal_growth" / "domestic_signal_growth.ps1"
 PRODUCT_INTELLIGENCE_SKILL = V2 / "skills" / "product_intelligence" / "product_intelligence.ps1"
@@ -373,10 +374,13 @@ def build_agent_prompt(agent: dict[str, Any]) -> str:
     workflow_hint = ""
     if agent["id"] == "yuzhineng-manufacturing-chief":
         workflow_hint = (
-            "\n当用户输入制造业获客、推广、社媒内容、销售交接相关任务时，优先使用 "
-            "manufacturing_multi_agent_workflow Skill 或本地脚本 "
+            "\n当用户输入制造业获客、Growth OS、ActionIntent、审批队列、项目归档、推广、社媒内容或销售交接相关任务时，"
+            "必须优先使用 manufacturing_multi_agent_workflow Skill 或本地脚本 "
             "D:\\OpenClaw\\v2\\scripts\\run_manufacturing_multi_agent_workflow.ps1。"
-            "完成后用中文展示 report.md 的八个 Agent 输出段落，并告诉用户项目目录、report.md、handoff.docx 和 projects_index.html。"
+            "不要自行创建一组 Markdown 文件替代主线归档脚本。"
+            "完成后用中文展示 report.md 的 Agent 输出段落，并告诉用户项目目录、report.md、handoff.docx、projects_index.html、"
+            "action_intents.json、approval_queue.json 和 review_report.md。"
+            "如果不能调用该 Skill，要明确说明“UI 未绑定制造业工作流 Skill”，不要伪装成已完成。"
         )
     return (
         f"你是{agent['name']}。职责：{agent['description']}\n"
@@ -1079,6 +1083,15 @@ def load_multi_agent_test_cases() -> list[dict[str, Any]]:
     return [read_json(MULTI_AGENT_TEST_CASE_DIR / file_name) for file_name in mapping]
 
 
+def load_growth_os_merge_test_cases() -> list[dict[str, Any]]:
+    mapping = [
+        "dongguan_heavy_packaging_growth_os.json",
+        "dongguan_electronics_connectors_growth_os.json",
+        "dongguan_fitness_equipment_growth_os.json",
+    ]
+    return [read_json(GROWTH_OS_MERGE_TEST_CASE_DIR / file_name) for file_name in mapping]
+
+
 def phase2b_safety_check(task: dict[str, Any], domestic: dict[str, Any], model_result: dict[str, Any]) -> dict[str, Any]:
     parsed = domestic.get("parsed") or {}
     text = json.dumps(parsed, ensure_ascii=False)
@@ -1508,6 +1521,97 @@ def run_phase2f() -> int:
     return 0 if completed else 2
 
 
+def run_growth_os_merge() -> int:
+    started_at = time.strftime("%Y-%m-%d %H:%M:%S %z")
+    run_id = "phase-m1-growth-os-merge-" + time.strftime("%Y%m%d-%H%M%S")
+    run_dir = TEST_RUNS_DIR / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    task_summaries = []
+    raw_results = []
+    for case in load_growth_os_merge_test_cases():
+        case_input = dict(case["input"])
+        case_input.setdefault("mode", "draft_only")
+        input_path = run_dir / f"{case['id']}.input.json"
+        output_path = run_dir / f"{case['id']}.result.json"
+        write_json(input_path, case_input)
+        result = run(
+            [
+                "python",
+                str(MULTI_AGENT_WORKFLOW_SCRIPT),
+                "--input-file",
+                str(input_path),
+                "--runs-root",
+                str(run_dir / "workflow-runs"),
+                "--collaboration-root",
+                str(run_dir / "multi-agent-runs"),
+                "--projects-root",
+                str(run_dir / "projects"),
+                "--output-file",
+                str(output_path),
+            ],
+            timeout=180,
+        )
+        parsed = read_json(output_path) if output_path.exists() else {}
+        growth_os = parsed.get("growth_os") or {}
+        files = growth_os.get("files") or {}
+        required_files = {
+            "product_profile": files.get("product_profile"),
+            "sources": files.get("sources"),
+            "lead_candidates": files.get("lead_candidates"),
+            "evidence": files.get("evidence"),
+            "action_intents": files.get("action_intents"),
+            "approval_queue": files.get("approval_queue"),
+            "review_report": files.get("review_report"),
+            "report": parsed.get("report_path"),
+            "handoff": parsed.get("handoff_path"),
+        }
+        file_checks = {name: bool(path and Path(path).exists()) for name, path in required_files.items()}
+        raw_results.append({"case_id": case["id"], "command_result": result, "parsed": parsed})
+        task_summaries.append(
+            {
+                "case_id": case["id"],
+                "name": case["name"],
+                "ok": bool(parsed.get("ok")) and result["code"] == 0,
+                "workflow_run_dir": parsed.get("workflow_run_dir"),
+                "project_dir": parsed.get("project_dir"),
+                "model": parsed.get("model"),
+                "mode": parsed.get("mode"),
+                "growth_os_ok": bool(growth_os.get("ok")),
+                "lead_count": growth_os.get("lead_count"),
+                "action_intent_count": growth_os.get("action_intent_count"),
+                "approval_queue_count": growth_os.get("approval_queue_count"),
+                "draft_only": bool(growth_os.get("draft_only")),
+                "real_external_send": bool(growth_os.get("real_external_send")),
+                "file_checks": file_checks,
+            }
+        )
+
+    completed = all(
+        item["ok"]
+        and item["growth_os_ok"]
+        and item["draft_only"]
+        and not item["real_external_send"]
+        and item["action_intent_count"]
+        and item["approval_queue_count"]
+        and all(item["file_checks"].values())
+        for item in task_summaries
+    )
+    summary = {
+        "run_id": run_id,
+        "phase": "M1",
+        "started_at": started_at,
+        "model": MODEL,
+        "task_summaries": task_summaries,
+        "completed": completed,
+    }
+    write_json(run_dir / "summary.json", summary)
+    write_json(run_dir / "raw_results.json", raw_results)
+    write_json(TEST_RUNS_DIR / "latest-growth-os-merge.json", {"run_id": run_id, "path": str(run_dir), "completed": completed})
+    print(json.dumps(summary, ensure_ascii=False, indent=2))
+    return 0 if completed else 2
+
+
 def generate_report(run_id: str, started_at: str, config: dict[str, Any], agent_results: list[dict[str, Any]], ui_results: list[dict[str, Any]], traces: list[dict[str, Any]]) -> None:
     all_done = all(t.get("completed") for t in traces)
     all_v4 = all(t.get("model") == "deepseek-v4-pro" for t in traces)
@@ -1665,6 +1769,7 @@ def main() -> int:
     parser.add_argument("--run-phase2d", action="store_true")
     parser.add_argument("--run-phase2e", action="store_true")
     parser.add_argument("--run-phase2f", action="store_true")
+    parser.add_argument("--run-growth-os-merge", action="store_true")
     args = parser.parse_args()
 
     if args.init_local_config:
@@ -1680,6 +1785,8 @@ def main() -> int:
         return run_phase2e()
     if args.run_phase2f:
         return run_phase2f()
+    if args.run_growth_os_merge:
+        return run_growth_os_merge()
     if not args.run:
         parser.print_help()
         return 2

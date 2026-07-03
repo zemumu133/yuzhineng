@@ -1,0 +1,16 @@
+{
+  "external_actions_default": "draft_only",
+  "enable_real_publish": false,
+  "enable_auto_comment": false,
+  "enable_auto_dm": false,
+  "enable_auto_email": false,
+  "enable_add_wechat_contact": false,
+  "enable_group_message": false,
+  "enable_batch_export": false,
+  "enable_platform_login": false,
+  "enable_advanced_auto_mode": false,
+  "require_human_approval_for_external_actions": true,
+  "audit_all_actions": true,
+  "allow_dev_sandbox_executor": true
+}
+

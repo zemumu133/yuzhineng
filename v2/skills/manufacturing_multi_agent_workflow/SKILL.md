@@ -34,6 +34,11 @@ The command returns JSON containing:
 - `report_path`
 - `handoff_path`
 - `projects_index_html`
+- `growth_os.files.action_intents`
+- `growth_os.files.approval_queue`
+- `growth_os.files.review_report`
+- `growth_os.files.lead_candidates`
+- `growth_os.files.evidence`
 - `agent_count`
 - `safety`
 
@@ -51,8 +56,15 @@ The user should see:
 - 归档 Agent 输出
 - Agent 工作群入口：`agent_group_chat.html`
 - Agent 成果工作台入口：`agent_workspace.html`
+- Growth OS 文件：`action_intents.json`
+- Growth OS 文件：`approval_queue.json`
+- Growth OS 文件：`review_report.md`
 
 Keep raw JSON in advanced details only when the user asks for it.
+
+Do not create a separate Markdown-only project by hand when this Skill is
+available. The source of truth is the local workflow script output and the
+`D:\OpenClaw\v2\projects` archive it returns.
 
 ## Phase 2F UI Mirroring
 

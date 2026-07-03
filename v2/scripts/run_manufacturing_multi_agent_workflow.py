@@ -18,6 +18,11 @@ DEFAULT_PROJECTS_ROOT = V2 / "projects"
 DEFAULT_MODEL = "deepseek/deepseek-v4-pro"
 WORKFLOW_PATH = V2 / "workflows" / "dongguan_manufacturing_growth" / "multi_agent_workflow.json"
 
+if str(V2) not in sys.path:
+    sys.path.insert(0, str(V2))
+
+from growth_os.adapters.manufacturing_growth_adapter import build_growth_os_workspace
+
 
 def load_module(name: str, path: Path):
     spec = importlib.util.spec_from_file_location(name, path)
@@ -416,6 +421,7 @@ def build_trace(
     plan: dict[str, Any],
     agent_tasks: list[dict[str, Any]],
     archive_output: dict[str, Any],
+    growth_os_output: dict[str, Any] | None = None,
 ) -> str:
     lines = [
         "# Phase 2E 多 Agent 工作流轨迹",
@@ -434,6 +440,24 @@ def build_trace(
             "## 归档结果",
             f"- 项目目录：{archive_output.get('project_dir')}",
             f"- 项目索引：{archive_output.get('projects_index_html')}",
+        ]
+    )
+    if growth_os_output:
+        files = growth_os_output.get("files") or {}
+        lines.extend(
+            [
+                "",
+                "## Growth OS 合并能力",
+                f"- 线索候选：{growth_os_output.get('lead_count')}",
+                f"- ActionIntent：{growth_os_output.get('action_intent_count')}",
+                f"- 审批项：{growth_os_output.get('approval_queue_count')}",
+                f"- action_intents.json：{files.get('action_intents')}",
+                f"- approval_queue.json：{files.get('approval_queue')}",
+                f"- review_report.md：{files.get('review_report')}",
+            ]
+        )
+    lines.extend(
+        [
             "",
             "## 安全边界",
             "- 未真实发布。",
@@ -444,6 +468,31 @@ def build_trace(
         ]
     )
     return "\n".join(lines) + "\n"
+
+
+def build_growth_os_report_section(growth_os_output: dict[str, Any]) -> str:
+    files = growth_os_output.get("files") or {}
+    return f"""
+
+## 9. Growth OS 合并交付
+
+- Growth OS 状态：{'已生成' if growth_os_output.get('ok') else '未生成'}
+- 线索候选：{growth_os_output.get('lead_count', 0)}
+- ActionIntent：{growth_os_output.get('action_intent_count', 0)}
+- 审批队列：{growth_os_output.get('approval_queue_count', 0)}
+- 数据来源状态：{growth_os_output.get('source_status') or 'unknown'}
+- 是否保持 draft_only：{'是' if growth_os_output.get('draft_only') else '否'}
+- 是否发生真实外发：{'是' if growth_os_output.get('real_external_send') else '否'}
+- product_profile.json：{files.get('product_profile') or '未生成'}
+- sources.json：{files.get('sources') or '未生成'}
+- lead_candidates.json：{files.get('lead_candidates') or '未生成'}
+- evidence.json：{files.get('evidence') or '未生成'}
+- action_intents.json：{files.get('action_intents') or '未生成'}
+- approval_queue.json：{files.get('approval_queue') or '未生成'}
+- review_report.md：{files.get('review_report') or '未生成'}
+
+Growth OS 当前只负责把草稿、潜在外部动作、证据和审批项归档到本地；真实发布、评论、私信、邮件、加微信和群发仍默认关闭。
+"""
 
 
 def build_skill_output(
@@ -555,6 +604,17 @@ def run_workflow(
     )
     write_json(run_dir / "archive_agent_output.json", archive_output)
 
+    growth_os_output = build_growth_os_workspace(
+        project_dir=archive_output["project_dir"],
+        run_dir=run_dir,
+        input_data=input_data,
+        product_output=product_output,
+        opportunity_output=opportunity_output,
+        project_id=run_id,
+        project_name=f"{input_data['factory_type']}-{input_data['product_name']} 多 Agent 获客工作流",
+    )
+    write_json(run_dir / "growth_os_agent_output.json", growth_os_output)
+
     final_report = build_final_report(
         plan,
         product_output,
@@ -565,6 +625,7 @@ def run_workflow(
         safety_output,
         archive_output,
     )
+    final_report = final_report + build_growth_os_report_section(growth_os_output)
     write_text(final_report_path, final_report)
     project_report_path = Path(archive_output["report_path"])
     write_text(project_report_path, final_report)
@@ -588,7 +649,7 @@ def run_workflow(
     )
     collaboration_section = f"""
 
-## 9. 真实多 Agent 协作交付
+## 10. 真实多 Agent 协作交付
 
 - LobsterAI 桌面端入口：左侧“我的 Agent”中查看各专业 Agent 的任务会话；打开“总控 Agent”会话可查看子 Agent 协作记录。
 - 归纳 Agent 总结：{collaboration_output['final_summary']}
@@ -617,7 +678,7 @@ def run_workflow(
         )
     write_json(run_dir / "lobsterai_ui_mirror.json", lobsterai_mirror)
     write_json(Path(collaboration_output["project_multi_agent_dir"]) / "lobsterai_ui_mirror.json", lobsterai_mirror)
-    write_text(run_dir / "trace.md", build_trace(plan, agent_tasks, archive_output))
+    write_text(run_dir / "trace.md", build_trace(plan, agent_tasks, archive_output, growth_os_output))
 
     return {
         "ok": True,
@@ -630,6 +691,7 @@ def run_workflow(
         "model": DEFAULT_MODEL,
         "mode": "draft_only",
         "source_status": opportunity_output.get("source_status"),
+        "growth_os": growth_os_output,
         "agent_count": len(plan["agents"]),
         "safety": safety_output,
         "collaboration": {
