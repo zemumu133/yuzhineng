@@ -32,6 +32,130 @@ def _as_list(value: Any) -> list[Any]:
     return [value]
 
 
+def _ui_item(
+    *,
+    project_id: str,
+    item_type: str,
+    title: str,
+    file_path: Path,
+    owner_agent_id: str,
+    display_area: str,
+    file_type: str,
+    summary: str,
+    count: int | None = None,
+    status: str = "已生成",
+) -> dict[str, Any]:
+    item: dict[str, Any] = {
+        "item_type": item_type,
+        "owner_agent_id": owner_agent_id,
+        "project_id": project_id,
+        "file_type": file_type,
+        "display_area": display_area,
+        "title": title,
+        "summary": summary,
+        "file_path": str(file_path),
+        "status": status,
+    }
+    if count is not None:
+        item["count"] = count
+    return item
+
+
+def build_ui_delivery_items(
+    *,
+    project_id: str,
+    files: dict[str, Path],
+    lead_count: int,
+    action_count: int,
+    approval_count: int,
+) -> list[dict[str, Any]]:
+    return [
+        _ui_item(
+            project_id=project_id,
+            item_type="project",
+            title="项目目录",
+            file_path=files["project_dir"],
+            owner_agent_id="yuzhineng-archive-agent",
+            display_area="project_workspace",
+            file_type="directory",
+            summary="本轮 Growth OS 主线归档目录。",
+        ),
+        _ui_item(
+            project_id=project_id,
+            item_type="report",
+            title="总报告",
+            file_path=files["report"],
+            owner_agent_id="yuzhineng-summary-agent",
+            display_area="project_workspace",
+            file_type="md",
+            summary="完整获客方案和多 Agent 交付总结。",
+        ),
+        _ui_item(
+            project_id=project_id,
+            item_type="file",
+            title="产品资料卡",
+            file_path=files["product_card"],
+            owner_agent_id="yuzhineng-product-analyst",
+            display_area="file_panel",
+            file_type="md",
+            summary="产品理解、卖点、适合客户和缺失资料。",
+        ),
+        _ui_item(
+            project_id=project_id,
+            item_type="file",
+            title="线索/商机",
+            file_path=files["lead_candidates"],
+            owner_agent_id="yuzhineng-opportunity-researcher",
+            display_area="project_workspace",
+            file_type="json",
+            summary="公开来源支持的候选客户类型和商机线索。",
+            count=lead_count,
+        ),
+        _ui_item(
+            project_id=project_id,
+            item_type="action_intent",
+            title="ActionIntent",
+            file_path=files["action_intents"],
+            owner_agent_id="yuzhineng-social-operator",
+            display_area="project_workspace",
+            file_type="json",
+            summary="待审批的内容发布、评论、私信、交接等动作草稿。",
+            count=action_count,
+        ),
+        _ui_item(
+            project_id=project_id,
+            item_type="approval",
+            title="审批队列",
+            file_path=files["approval_queue"],
+            owner_agent_id="yuzhineng-safety-reviewer",
+            display_area="project_workspace",
+            file_type="json",
+            summary="所有外部动作默认 pending，不自动执行。",
+            count=approval_count,
+        ),
+        _ui_item(
+            project_id=project_id,
+            item_type="handoff_document",
+            title="工厂交接单",
+            file_path=files["handoff"],
+            owner_agent_id="yuzhineng-factory-handoff",
+            display_area="file_panel",
+            file_type="docx",
+            summary="销售跟进问题、SOP 和人工交接材料。",
+        ),
+        _ui_item(
+            project_id=project_id,
+            item_type="report",
+            title="风控复核",
+            file_path=files["review_report"],
+            owner_agent_id="yuzhineng-safety-reviewer",
+            display_area="file_panel",
+            file_type="md",
+            summary="draft_only、审批和真实外发风险检查结果。",
+        ),
+    ]
+
+
 def _normalize_sources(opportunity_output: dict[str, Any]) -> list[dict[str, Any]]:
     sources = opportunity_output.get("sources") or opportunity_output.get("public_sources") or []
     normalized: list[dict[str, Any]] = []
@@ -207,6 +331,10 @@ def build_growth_os_workspace(
 
     action_dicts = [action.to_dict() for action in actions]
     files = {
+        "project_dir": project_path,
+        "report": project_path / "report.md",
+        "handoff": project_path / "handoff.docx",
+        "product_card": project_path / "product_card.md",
         "product_profile": project_path / "product_profile.json",
         "sources": project_path / "sources.json",
         "lead_candidates": project_path / "lead_candidates.json",
@@ -219,6 +347,7 @@ def build_growth_os_workspace(
         "sandbox_results": project_path / "sandbox_results.json",
         "audit_log": project_path / "audit_log.json",
         "review_report": project_path / "review_report.md",
+        "ui_delivery_items": project_path / "ui_delivery_items.json",
     }
     write_json(files["product_profile"], product_profile)
     write_json(files["sources"], public_sources)
@@ -232,6 +361,14 @@ def build_growth_os_workspace(
     write_json(files["sandbox_results"], sandbox_results)
     write_json(files["audit_log"], audit.to_list())
     write_text(files["review_report"], review_report)
+    ui_delivery_items = build_ui_delivery_items(
+        project_id=project_id,
+        files=files,
+        lead_count=len(lead_research["lead_candidates"]),
+        action_count=len(action_dicts),
+        approval_count=len(approval_queue),
+    )
+    write_json(files["ui_delivery_items"], ui_delivery_items)
 
     manifest_path = project_path / "project_manifest.json"
     if manifest_path.exists():
@@ -244,6 +381,7 @@ def build_growth_os_workspace(
             "draft_only": True,
             "real_external_send": False,
             "generated_files": {key: str(path) for key, path in files.items()},
+            "ui_delivery_items_path": str(files["ui_delivery_items"]),
         }
         write_json(manifest_path, manifest)
 
@@ -264,4 +402,5 @@ def build_growth_os_workspace(
         "draft_only": True,
         "real_external_send": False,
         "files": {key: str(path) for key, path in files.items()},
+        "ui_delivery_items": ui_delivery_items,
     }

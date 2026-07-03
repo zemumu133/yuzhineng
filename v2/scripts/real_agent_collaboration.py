@@ -466,6 +466,11 @@ def write_multi_agent_projects_index(projects_root: Path) -> None:
         group_href = file_href(projects_root, item.get("agent_group_chat_path", ""))
         workspace_href = file_href(projects_root, item.get("agent_workspace_path", ""))
         summary_href = file_href(projects_root, item.get("final_summary_path", ""))
+        product_card_href = file_href(projects_root, item.get("product_card_path", str(project_dir / "product_card.md")))
+        leads_href = file_href(projects_root, item.get("lead_candidates_path", str(project_dir / "lead_candidates.json")))
+        action_href = file_href(projects_root, item.get("action_intents_path", str(project_dir / "action_intents.json")))
+        approval_href = file_href(projects_root, item.get("approval_queue_path", str(project_dir / "approval_queue.json")))
+        review_href = file_href(projects_root, item.get("review_report_path", str(project_dir / "review_report.md")))
         materials_href = file_href(projects_root, str(project_dir / "multi_agent" / "files" / "content_materials.md"))
         social_href = file_href(projects_root, str(project_dir / "multi_agent" / "files" / "social_plan.md"))
         multi_agent = (
@@ -481,7 +486,7 @@ def write_multi_agent_projects_index(projects_root: Path) -> None:
             f"<td>{html.escape(item.get('mode') or '')}</td>"
             f"<td>{html.escape(str(item.get('source_count', 0)))}</td>"
             f"<td>{multi_agent}</td>"
-            f"<td><a href=\"{report_href}\">推广方案</a><a href=\"{handoff_href}\">交接单</a><a href=\"{materials_href}\">宣传物料</a><a href=\"{social_href}\">社媒计划</a></td>"
+            f"<td><a href=\"{report_href}\">总报告</a><a href=\"{product_card_href}\">产品资料卡</a><a href=\"{leads_href}\">线索/商机</a><a href=\"{action_href}\">ActionIntent</a><a href=\"{approval_href}\">审批队列</a><a href=\"{handoff_href}\">交接单</a><a href=\"{review_href}\">风控复核</a><a href=\"{materials_href}\">宣传物料</a><a href=\"{social_href}\">社媒计划</a></td>"
             "</tr>"
         )
     html_text = f"""<!doctype html>
@@ -504,7 +509,7 @@ def write_multi_agent_projects_index(projects_root: Path) -> None:
 <body>
   <h1>宇智能项目成果</h1>
   <p>这里汇总本机归档的制造业获客成果。所有外部动作均为 draft_only，发布、评论、私信和邮件必须人工确认。</p>
-  <div class="notice">新增入口：Agent 工作群、Agent 成果工作台、最终总结、宣传物料和社媒计划。</div>
+  <div class="notice">新增入口：项目目录、总报告、产品资料卡、线索/商机、ActionIntent、审批队列、交接单、Agent 工作群和成果工作台。</div>
   <table>
     <thead>
       <tr><th>生成时间</th><th>产品名称</th><th>工厂类型</th><th>模式</th><th>来源数</th><th>多 Agent 入口</th><th>成果文件</th></tr>
@@ -515,6 +520,7 @@ def write_multi_agent_projects_index(projects_root: Path) -> None:
 </html>
 """
     write_text(projects_root / "index.html", html_text)
+    write_text(projects_root / "projects_index.html", html_text)
 
 
 def update_project_index_for_collaboration(projects_root: Path, project_id: str, paths: dict[str, str]) -> None:

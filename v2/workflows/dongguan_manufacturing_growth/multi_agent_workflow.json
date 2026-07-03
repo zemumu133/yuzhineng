@@ -12,7 +12,7 @@
       "id": "yuzhineng-manufacturing-chief",
       "name": "宇智能制造业获客总控 Agent",
       "role": "接收用户任务，拆解任务，调用各专业 Agent，汇总最终交付物，控制所有外部动作保持 draft_only。",
-      "skills": ["product_intelligence", "domestic_signal_growth", "web-search", "archive_manufacturing_growth_result"]
+      "skills": ["manufacturing_multi_agent_workflow", "product_intelligence", "domestic_signal_growth", "web-search", "archive_manufacturing_growth_result"]
     },
     {
       "id": "yuzhineng-product-analyst",

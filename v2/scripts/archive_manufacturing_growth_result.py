@@ -308,6 +308,10 @@ def build_readme(project_name: str, manifest: dict[str, Any]) -> str:
 - 推广方案：`report.md`
 - 工厂销售交接单：`handoff.docx`
 - 公开来源：`sources.json`
+- 线索/商机：`lead_candidates.json` 或 `leads.json`
+- ActionIntent：`action_intents.json`
+- 审批队列：`approval_queue.json`
+- 风控复核：`review_report.md`
 - 下一步待办：`todos.json`
 - 安全检查：`safety_check.json`
 
@@ -339,6 +343,15 @@ def generated_file_paths(project_dir: Path) -> dict[str, str]:
         "growth_input": str(project_dir / "growth_input.json"),
         "report_md": str(project_dir / "report.md"),
         "handoff_docx": str(project_dir / "handoff.docx"),
+        "lead_candidates": str(project_dir / "lead_candidates.json"),
+        "leads": str(project_dir / "leads.json"),
+        "evidence": str(project_dir / "evidence.json"),
+        "content_drafts": str(project_dir / "content_drafts.json"),
+        "private_domain_sop": str(project_dir / "private_domain_sop.json"),
+        "action_intents": str(project_dir / "action_intents.json"),
+        "approval_queue": str(project_dir / "approval_queue.json"),
+        "review_report": str(project_dir / "review_report.md"),
+        "ui_delivery_items": str(project_dir / "ui_delivery_items.json"),
         "readme": str(project_dir / "README_CN.md"),
         "todos": str(project_dir / "todos.json"),
         "sources": str(project_dir / "sources.json"),
@@ -409,6 +422,11 @@ def update_projects_index(projects_root: Path, manifest: dict[str, Any]) -> None
             "report_path": manifest["generated_files"]["report_md"],
             "handoff_path": manifest["generated_files"]["handoff_docx"],
             "product_card_path": manifest["generated_files"]["product_card"],
+            "lead_candidates_path": manifest["generated_files"]["lead_candidates"],
+            "action_intents_path": manifest["generated_files"]["action_intents"],
+            "approval_queue_path": manifest["generated_files"]["approval_queue"],
+            "review_report_path": manifest["generated_files"]["review_report"],
+            "ui_delivery_items_path": manifest["generated_files"]["ui_delivery_items"],
             "source_status": manifest.get("source_status") or "unknown",
             "todo_count": len(manifest.get("todos") or []),
             "source_count": manifest.get("source_count", 0),
@@ -440,6 +458,10 @@ def write_projects_html(projects_root: Path, index: list[dict[str, Any]]) -> Non
         )
         report_href = file_href(projects_root, item.get("report_path", ""))
         handoff_href = file_href(projects_root, item.get("handoff_path", ""))
+        leads_href = file_href(projects_root, item.get("lead_candidates_path", ""))
+        action_href = file_href(projects_root, item.get("action_intents_path", ""))
+        approval_href = file_href(projects_root, item.get("approval_queue_path", ""))
+        review_href = file_href(projects_root, item.get("review_report_path", ""))
         project_dir = Path(item.get("report_path", "")).parent
         todos_href = file_href(projects_root, str(project_dir / "todos.json"))
         rows.append(
@@ -453,7 +475,11 @@ def write_projects_html(projects_root: Path, index: list[dict[str, Any]]) -> Non
             f"<td>{item.get('todo_count', 0)}</td>"
             f"<td>{product_card_cell}</td>"
             f"<td><a href=\"{report_href}\">打开推广方案</a></td>"
+            f"<td><a href=\"{leads_href}\">打开线索/商机</a></td>"
+            f"<td><a href=\"{action_href}\">打开 ActionIntent</a></td>"
+            f"<td><a href=\"{approval_href}\">打开审批队列</a></td>"
             f"<td><a href=\"{handoff_href}\">打开交接单</a></td>"
+            f"<td><a href=\"{review_href}\">打开风控复核</a></td>"
             f"<td><a href=\"{todos_href}\">打开待办</a></td>"
             "</tr>"
         )
@@ -480,16 +506,17 @@ def write_projects_html(projects_root: Path, index: list[dict[str, Any]]) -> Non
   <div class="notice">项目索引文件：projects_index.json</div>
   <table>
     <thead>
-      <tr><th>生成时间</th><th>产品名称</th><th>工厂类型</th><th>模式</th><th>来源</th><th>source_status</th><th>待办数量</th><th>产品资料卡</th><th>推广方案</th><th>客户交接单</th><th>待办</th></tr>
+      <tr><th>生成时间</th><th>产品名称</th><th>工厂类型</th><th>模式</th><th>来源</th><th>source_status</th><th>待办数量</th><th>产品资料卡</th><th>推广方案</th><th>线索/商机</th><th>ActionIntent</th><th>审批队列</th><th>客户交接单</th><th>风控复核</th><th>待办</th></tr>
     </thead>
     <tbody>
-      {''.join(rows) if rows else '<tr><td colspan="11">暂无项目，请先运行一次制造业获客任务。</td></tr>'}
+      {''.join(rows) if rows else '<tr><td colspan="15">暂无项目，请先运行一次制造业获客任务。</td></tr>'}
     </tbody>
   </table>
 </body>
 </html>
 """
     write_text(projects_root / "index.html", html_text)
+    write_text(projects_root / "projects_index.html", html_text)
 
 
 def copy_or_generate_report(project_dir: Path, skill_output: dict[str, Any], sources: list[dict[str, Any]], source_file: Path | None) -> None:
@@ -651,7 +678,7 @@ def archive_task_output(
         "report_path": str(project_dir / "report.md"),
         "handoff_path": str(project_dir / "handoff.docx"),
         "projects_index_json": str(projects_root / "projects_index.json"),
-        "projects_index_html": str(projects_root / "index.html"),
+        "projects_index_html": str(projects_root / "projects_index.html"),
     }
 
 
