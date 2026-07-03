@@ -7,9 +7,17 @@
 - 当前本地分支：`merge-growth-os-cleanroom`
 - 推荐推送分支：`main` 或 `v2-open-source-growth-system`
 
-## 当前不推送的原因
+## 当前推送状态
 
-当前阶段仍在修复 LobsterAI UI 数据分层、Agent 去重、Growth OS 主线归档路径和打包前验证。此时推送容易把本机运行数据、临时测试数据或未固化的上游补丁带入 GitHub，因此本阶段只准备 remote 和发布清单，不执行 push。
+2026-07-03 已按用户确认，将当前分支 `merge-growth-os-cleanroom` 推送到：
+
+```text
+https://github.com/zemumu133/yuzhineng/tree/merge-growth-os-cleanroom
+```
+
+本次推送前已完成 `v2-task-postcheck.ps1`，未提交 secrets、logs、database、backups、data、exports、browser profile、node_modules、构建产物或真实项目成果。
+
+当前仍不建议创建正式 release/tag。正式 release 应等待 PACK-1 可移植安装包 PoC 和干净机恢复验证完成。
 
 ## 推送前必须完成
 
@@ -46,4 +54,4 @@
 
 ## 后续建议
 
-在 PACK-1 可移植安装包 PoC 完成后，再执行第一次 GitHub push。推送前建议生成一次“干净机恢复清单”，确保新设备只靠仓库代码、配置模板、patch 和安装脚本即可还原开发环境，不依赖本机隐藏状态。
+继续完成 PACK-1 可移植安装包 PoC，并生成一次“干净机恢复清单”，确保新设备只靠仓库代码、配置模板、patch 和安装脚本即可还原开发环境，不依赖本机隐藏状态。

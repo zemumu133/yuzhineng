@@ -72,6 +72,7 @@ __pycache__/
 /v2/client-shell/lobsterai/**/.parcel-cache/
 /v2/client-shell/lobsterai/**/.electron/
 /v2/runtimes/
+/v2/packages/
 
 # Phase 1A Dev Auto-Run local-only config and generated test traces
 /v2/dev-config/dev-auto-run.json
