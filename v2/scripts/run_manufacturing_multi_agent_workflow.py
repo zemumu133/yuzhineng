@@ -13,6 +13,7 @@ from typing import Any
 ROOT = Path(r"D:\OpenClaw")
 V2 = ROOT / "v2"
 DEFAULT_RUNS_ROOT = V2 / "data" / "workflow-runs"
+DEFAULT_COLLABORATION_ROOT = V2 / "data" / "multi-agent-runs"
 DEFAULT_PROJECTS_ROOT = V2 / "projects"
 DEFAULT_MODEL = "deepseek/deepseek-v4-pro"
 WORKFLOW_PATH = V2 / "workflows" / "dongguan_manufacturing_growth" / "multi_agent_workflow.json"
@@ -40,6 +41,10 @@ DOMESTIC_SIGNAL_GROWTH = load_module(
 ARCHIVE = load_module(
     "phase2e_archive_manufacturing_growth_result",
     V2 / "scripts" / "archive_manufacturing_growth_result.py",
+)
+COLLABORATION = load_module(
+    "phase2f_real_agent_collaboration",
+    V2 / "scripts" / "real_agent_collaboration.py",
 )
 
 
@@ -150,25 +155,31 @@ def build_plan(input_data: dict[str, Any], run_id: str, created_at: str) -> dict
 def build_agent_tasks(plan: dict[str, Any]) -> list[dict[str, Any]]:
     tasks: list[dict[str, Any]] = []
     step_by_agent = {
-        "yuzhineng-manufacturing-chief": "总控拆解与最终汇总",
-        "yuzhineng-product-analyst": "产品资料理解",
-        "yuzhineng-opportunity-researcher": "商机发掘与公开来源整理",
-        "yuzhineng-content-producer": "宣传物料生成",
-        "yuzhineng-social-operator": "社媒运营草稿和账号养成",
-        "yuzhineng-factory-handoff": "工厂销售交接",
-        "yuzhineng-safety-reviewer": "风控审核",
-        "yuzhineng-archive-agent": "项目归档",
+        "yuzhineng-manufacturing-chief": "创建项目、项目 Agent 工作群和父任务，拆解各专业 Agent 子任务。",
+        "yuzhineng-product-analyst": "理解产品资料，输出产品画像、卖点、适合客户和缺失信息。",
+        "yuzhineng-opportunity-researcher": "整理公开来源、目标客户方向、采购信号和商机评分。",
+        "yuzhineng-content-producer": "生成小红书、抖音、公众号、产品介绍和销售话术草稿。",
+        "yuzhineng-social-operator": "生成发布计划、评论回复草稿、私信草稿和账号养成计划。",
+        "yuzhineng-factory-handoff": "生成工厂销售交接单、跟进 SOP 和人工待办。",
+        "yuzhineng-safety-reviewer": "检查真实外发、夸大宣传、来源、draft_only 声明和人工审批要求。",
+        "yuzhineng-summary-agent": "读取所有 Agent 最终输出和返工日志，生成 final_summary.md。",
+        "yuzhineng-archive-agent": "保存项目成果、更新项目索引和文件入口。",
     }
     for index, agent in enumerate(plan["agents"], start=1):
         tasks.append(
             {
+                "task_id": f"{plan['workflow_run_id']}-{agent['id']}",
                 "order": index,
                 "agent_id": agent["id"],
                 "agent_name": agent["name"],
                 "assignment": step_by_agent.get(agent["id"], agent.get("role", "")),
+                "input": step_by_agent.get(agent["id"], agent.get("role", "")),
                 "expected_output": agent.get("role", ""),
                 "status": "completed",
+                "status_label": "已完成",
                 "mode": "draft_only",
+                "output_summary": "",
+                "output_files": [],
             }
         )
     return tasks
@@ -458,8 +469,11 @@ def run_workflow(
     payload: dict[str, Any],
     *,
     runs_root: str | Path = DEFAULT_RUNS_ROOT,
+    collaboration_root: str | Path = DEFAULT_COLLABORATION_ROOT,
     projects_root: str | Path = DEFAULT_PROJECTS_ROOT,
     created_at: str | None = None,
+    mirror_lobsterai_ui: bool = False,
+    lobsterai_sqlite: str | Path | None = None,
 ) -> dict[str, Any]:
     input_data = normalize_input(payload)
     created_at = created_at or now_iso()
@@ -554,6 +568,55 @@ def run_workflow(
     write_text(final_report_path, final_report)
     project_report_path = Path(archive_output["report_path"])
     write_text(project_report_path, final_report)
+    collaboration_output = COLLABORATION.build_real_agent_collaboration(
+        input_data=input_data,
+        plan=plan,
+        agent_tasks=agent_tasks,
+        outputs={
+            "product": product_output,
+            "opportunity": opportunity_output,
+            "content": content_output,
+            "social": social_output,
+            "factory": factory_output,
+            "safety": safety_output,
+        },
+        archive_output=archive_output,
+        run_dir=run_dir,
+        collaboration_root=collaboration_root,
+        created_at=created_at,
+        final_report_path=final_report_path,
+    )
+    collaboration_section = f"""
+
+## 9. 真实多 Agent 协作交付
+
+- Agent 工作群：{collaboration_output['agent_group_chat_html']}
+- Agent 成果工作台：{collaboration_output['agent_workspace_html']}
+- 归纳 Agent 总结：{collaboration_output['final_summary']}
+- 群聊发言 Agent 数：{collaboration_output['agent_speaker_count']}
+- 风控返工数量：{collaboration_output['rework_count']}
+- 左侧 Agent 任务镜像：{'已请求写入 LobsterAI 本地会话' if mirror_lobsterai_ui else '本次未启用'}
+
+本轮多 Agent 协作已拆分为独立子任务、独立输出、群聊消息、返工日志和最终总结。所有外部动作仍为 draft_only。
+"""
+    final_report_with_collaboration = final_report + collaboration_section
+    write_text(final_report_path, final_report_with_collaboration)
+    write_text(project_report_path, final_report_with_collaboration)
+    for report_copy in [
+        Path(collaboration_output["project_multi_agent_dir"]) / "files" / "final_report.md",
+        Path(collaboration_output["collaboration_run_dir"]) / "files" / "final_report.md",
+    ]:
+        write_text(report_copy, final_report_with_collaboration)
+
+    lobsterai_mirror = {"ok": False, "reason": "mirror_lobsterai_ui disabled", "mirrored_sessions": 0}
+    if mirror_lobsterai_ui:
+        lobsterai_mirror = COLLABORATION.mirror_collaboration_to_lobsterai(
+            collaboration=collaboration_output,
+            plan=plan,
+            db_path=lobsterai_sqlite or COLLABORATION.DEFAULT_LOBSTERAI_SQLITE,
+        )
+    write_json(run_dir / "lobsterai_ui_mirror.json", lobsterai_mirror)
+    write_json(Path(collaboration_output["project_multi_agent_dir"]) / "lobsterai_ui_mirror.json", lobsterai_mirror)
     write_text(run_dir / "trace.md", build_trace(plan, agent_tasks, archive_output))
 
     return {
@@ -569,6 +632,12 @@ def run_workflow(
         "source_status": opportunity_output.get("source_status"),
         "agent_count": len(plan["agents"]),
         "safety": safety_output,
+        "collaboration": {
+            key: value
+            for key, value in collaboration_output.items()
+            if key not in {"agent_tasks_data", "group_messages_data"}
+        },
+        "lobsterai_ui_mirror": lobsterai_mirror,
     }
 
 
@@ -608,9 +677,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--input-json", default="")
     parser.add_argument("--task", default="")
     parser.add_argument("--runs-root", default=str(DEFAULT_RUNS_ROOT))
+    parser.add_argument("--collaboration-root", default=str(DEFAULT_COLLABORATION_ROOT))
     parser.add_argument("--projects-root", default=str(DEFAULT_PROJECTS_ROOT))
     parser.add_argument("--created-at", default="")
     parser.add_argument("--output-file", default="")
+    parser.add_argument("--mirror-lobsterai-ui", action="store_true")
+    parser.add_argument("--lobsterai-sqlite", default="")
     return parser.parse_args()
 
 
@@ -630,8 +702,11 @@ def main() -> int:
         result = run_workflow(
             read_input(args),
             runs_root=args.runs_root,
+            collaboration_root=args.collaboration_root,
             projects_root=args.projects_root,
             created_at=args.created_at or None,
+            mirror_lobsterai_ui=args.mirror_lobsterai_ui,
+            lobsterai_sqlite=args.lobsterai_sqlite or None,
         )
     except Exception as exc:
         print(json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False, indent=2), file=sys.stderr)

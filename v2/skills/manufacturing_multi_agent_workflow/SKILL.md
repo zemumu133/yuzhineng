@@ -47,6 +47,20 @@ The user should see:
 - 社媒运营 Agent 输出
 - 工厂对接 Agent 输出
 - 风控审核 Agent 输出
+- 归纳 Agent 最终总结
 - 归档 Agent 输出
+- Agent 工作群入口：`agent_group_chat.html`
+- Agent 成果工作台入口：`agent_workspace.html`
 
 Keep raw JSON in advanced details only when the user asks for it.
+
+## Phase 2F UI Mirroring
+
+The PowerShell wrapper enables `MirrorLobsterAIUI` by default. It writes local
+draft-only cowork sessions for each professional Agent so the LobsterAI left
+sidebar can show task entries under those Agents. The script backs up the local
+SQLite database before writing. Disable this only for tests:
+
+```powershell
+-MirrorLobsterAIUI:$false
+```

@@ -102,6 +102,13 @@ MANUFACTURING_AGENTS = [
         "denied": ["真实外发", "读取 secrets", "绕过验证码", "伪造来源"],
     },
     {
+        "id": "yuzhineng-summary-agent",
+        "name": "归纳 Agent",
+        "description": "读取各专业 Agent 最终输出、返工日志和项目成果，生成最终总结、缺失项和下一步建议。",
+        "skills": ["manufacturing_multi_agent_workflow", "docx"],
+        "denied": ["真实外发", "读取 secrets", "伪造来源"],
+    },
+    {
         "id": "yuzhineng-archive-agent",
         "name": "归档 Agent",
         "description": "把制造业获客成果保存到项目工作区，更新项目索引，并输出成果路径。",
@@ -1410,6 +1417,97 @@ def run_phase2e() -> int:
     return 0 if summary["completed"] else 2
 
 
+def run_phase2f() -> int:
+    started_at = time.strftime("%Y-%m-%d %H:%M:%S %z")
+    run_id = "phase2f-" + time.strftime("%Y%m%d-%H%M%S")
+    run_dir = TEST_RUNS_DIR / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    task_summaries = []
+    raw_results = []
+    for case in load_multi_agent_test_cases():
+        case_input = dict(case["input"])
+        case_input.setdefault("mode", "draft_only")
+        input_path = run_dir / f"{case['id']}.input.json"
+        output_path = run_dir / f"{case['id']}.result.json"
+        write_json(input_path, case_input)
+        result = run(
+            [
+                "python",
+                str(MULTI_AGENT_WORKFLOW_SCRIPT),
+                "--input-file",
+                str(input_path),
+                "--runs-root",
+                str(run_dir / "workflow-runs"),
+                "--collaboration-root",
+                str(run_dir / "multi-agent-runs"),
+                "--projects-root",
+                str(run_dir / "projects"),
+                "--output-file",
+                str(output_path),
+            ],
+            timeout=180,
+        )
+        parsed = read_json(output_path) if output_path.exists() else {}
+        raw_results.append({"case_id": case["id"], "command_result": result, "parsed": parsed})
+        collaboration = parsed.get("collaboration") or {}
+        agent_tasks_path = Path(collaboration.get("agent_tasks") or "")
+        group_messages_path = Path(collaboration.get("group_room_messages") or "")
+        rework_log_path = Path(collaboration.get("rework_log") or "")
+        final_summary_path = Path(collaboration.get("final_summary") or "")
+        group_html_path = Path(collaboration.get("agent_group_chat_html") or "")
+        workspace_html_path = Path(collaboration.get("agent_workspace_html") or "")
+        agent_tasks = read_json(agent_tasks_path) if agent_tasks_path.exists() else []
+        group_messages = read_json(group_messages_path) if group_messages_path.exists() else []
+        rework_log = read_json(rework_log_path) if rework_log_path.exists() else []
+        speaker_count = len({item.get("sender_agent") for item in group_messages})
+        task_summaries.append(
+            {
+                "case_id": case["id"],
+                "name": case["name"],
+                "ok": bool(parsed.get("ok")) and result["code"] == 0,
+                "agent_task_count": len(agent_tasks),
+                "speaker_count": speaker_count,
+                "rework_count": len(rework_log),
+                "has_agent_tasks": agent_tasks_path.exists(),
+                "has_group_messages": group_messages_path.exists(),
+                "has_rework_log": rework_log_path.exists(),
+                "has_final_summary": final_summary_path.exists(),
+                "has_group_html": group_html_path.exists(),
+                "has_workspace_html": workspace_html_path.exists(),
+                "draft_only": parsed.get("mode") == "draft_only",
+                "real_external_send": bool((parsed.get("safety") or {}).get("real_external_send", True)),
+                "project_dir": parsed.get("project_dir"),
+            }
+        )
+
+    completed = all(
+        item["ok"]
+        and item["agent_task_count"] >= 9
+        and item["speaker_count"] >= 6
+        and item["rework_count"] >= 1
+        and item["has_final_summary"]
+        and item["has_group_html"]
+        and item["has_workspace_html"]
+        and item["draft_only"]
+        and not item["real_external_send"]
+        for item in task_summaries
+    )
+    summary = {
+        "run_id": run_id,
+        "phase": "2F",
+        "started_at": started_at,
+        "model": MODEL,
+        "task_summaries": task_summaries,
+        "completed": completed,
+    }
+    write_json(run_dir / "summary.json", summary)
+    write_json(run_dir / "raw_results.json", raw_results)
+    write_json(TEST_RUNS_DIR / "latest-phase2f.json", {"run_id": run_id, "path": str(run_dir), "completed": completed})
+    print(json.dumps(summary, ensure_ascii=False, indent=2))
+    return 0 if completed else 2
+
+
 def generate_report(run_id: str, started_at: str, config: dict[str, Any], agent_results: list[dict[str, Any]], ui_results: list[dict[str, Any]], traces: list[dict[str, Any]]) -> None:
     all_done = all(t.get("completed") for t in traces)
     all_v4 = all(t.get("model") == "deepseek-v4-pro" for t in traces)
@@ -1566,6 +1664,7 @@ def main() -> int:
     parser.add_argument("--run-phase2b", action="store_true")
     parser.add_argument("--run-phase2d", action="store_true")
     parser.add_argument("--run-phase2e", action="store_true")
+    parser.add_argument("--run-phase2f", action="store_true")
     args = parser.parse_args()
 
     if args.init_local_config:
@@ -1579,6 +1678,8 @@ def main() -> int:
         return run_phase2d()
     if args.run_phase2e:
         return run_phase2e()
+    if args.run_phase2f:
+        return run_phase2f()
     if not args.run:
         parser.print_help()
         return 2

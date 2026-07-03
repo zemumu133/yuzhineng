@@ -3,9 +3,12 @@ param(
   [string]$InputJson = "",
   [string]$Task = "",
   [string]$RunsRoot = "D:\OpenClaw\v2\data\workflow-runs",
+  [string]$CollaborationRoot = "D:\OpenClaw\v2\data\multi-agent-runs",
   [string]$ProjectsRoot = "D:\OpenClaw\v2\projects",
   [string]$CreatedAt = "",
-  [string]$OutputFile = ""
+  [string]$OutputFile = "",
+  [bool]$MirrorLobsterAIUI = $true,
+  [string]$LobsterAISqlite = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -22,7 +25,7 @@ if (-not $python -and -not $py) {
   throw "Python runtime not found. Please install Python under D:\DevTools or make python/py available for this session."
 }
 
-$argsList = @($pythonFile, "--runs-root", $RunsRoot, "--projects-root", $ProjectsRoot)
+$argsList = @($pythonFile, "--runs-root", $RunsRoot, "--collaboration-root", $CollaborationRoot, "--projects-root", $ProjectsRoot)
 if ($InputFile.Trim().Length -gt 0) {
   $argsList += @("--input-file", $InputFile)
 } elseif ($InputJson.Trim().Length -gt 0) {
@@ -35,6 +38,12 @@ if ($CreatedAt.Trim().Length -gt 0) {
 }
 if ($OutputFile.Trim().Length -gt 0) {
   $argsList += @("--output-file", $OutputFile)
+}
+if ($MirrorLobsterAIUI) {
+  $argsList += @("--mirror-lobsterai-ui")
+}
+if ($LobsterAISqlite.Trim().Length -gt 0) {
+  $argsList += @("--lobsterai-sqlite", $LobsterAISqlite)
 }
 
 if ($python) {

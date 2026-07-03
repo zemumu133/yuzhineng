@@ -2,7 +2,8 @@ param(
   [string]$InputFile = "",
   [string]$InputJson = "",
   [string]$Task = "",
-  [string]$OutputFile = ""
+  [string]$OutputFile = "",
+  [bool]$MirrorLobsterAIUI = $true
 )
 
 $ErrorActionPreference = "Stop"
@@ -19,6 +20,7 @@ if ($InputFile.Trim().Length -gt 0) {
 if ($OutputFile.Trim().Length -gt 0) {
   $argsList += @("-OutputFile", $OutputFile)
 }
+$argsList += @("-MirrorLobsterAIUI", $MirrorLobsterAIUI)
 
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $ScriptPath @argsList
 exit $LASTEXITCODE

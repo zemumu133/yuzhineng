@@ -51,6 +51,12 @@
       "skills": []
     },
     {
+      "id": "yuzhineng-summary-agent",
+      "name": "归纳 Agent",
+      "role": "读取各专业 Agent 的最终输出、返工日志和项目文件，生成最终总结、缺失项和下一步建议。",
+      "skills": ["manufacturing_multi_agent_workflow"]
+    },
+    {
       "id": "yuzhineng-archive-agent",
       "name": "归档 Agent",
       "role": "调用 archive_manufacturing_growth_result，把成果保存到项目工作区并更新项目索引。",
@@ -65,6 +71,7 @@
     "social_operations",
     "factory_handoff",
     "safety_review",
+    "summary_result",
     "archive_result",
     "chief_summary"
   ],
